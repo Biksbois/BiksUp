@@ -13,7 +13,13 @@ import pickle
 import argparse
 import datetime
 
-parser = argparse.ArgumentParser()
+parser = argparse.ArgumentParser() 
+#Seems to be some sort of runtime struct
+#As the name ArgumentParser suggestes it is simply away to parse the diffrent arguments to the model. 
+#The first argument in the add_argument is the word used to call the atribute later. 
+#An example could be the first line where '--dataset' is used is the data is should be accesed again opt.dataset should be used. 
+#The defualt is simply the argument that will be returned, help is used a way to make debugging easier, but have no real effect. 
+#https://docs.python.org/3/library/argparse.html#argumentparser-objects
 parser.add_argument('--dataset', default='sample', help='dataset name: diginetica/yoochoose1_4/yoochoose1_64/sample')
 parser.add_argument('--method', type=str, default='ggnn', help='ggnn/gat/gcn')
 parser.add_argument('--validation', action='store_true', help='validation')
