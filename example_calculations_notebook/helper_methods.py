@@ -12,4 +12,4 @@ def tanh(x):
     return t #,dt
 
 def get_initial_weight(matrix):
-    return np.random.rand(matrix.shape[0], matrix.shape[1]) 
+    return np.random.rand(matrix.shape[0], matrix.shape[1]).astype(np.float64) 
