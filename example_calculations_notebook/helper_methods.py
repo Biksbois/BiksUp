@@ -10,3 +10,6 @@ def tanh(x):
     t=(np.exp(x)-np.exp(-x))/(np.exp(x)+np.exp(-x))
     dt=1-t**2
     return t #,dt
+
+def get_initial_weight(matrix):
+    return np.random.rand(matrix.shape[0], matrix.shape[1]) 
