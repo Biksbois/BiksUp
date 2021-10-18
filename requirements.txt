@@ -1,0 +1,7 @@
+torch==1.9.1
+icecream==2.1.1
+networkx==2.6.3
+unittest2==1.1.0
+numpy==1.21.2
+parameterized==0.8.1
+rich==10.12.0

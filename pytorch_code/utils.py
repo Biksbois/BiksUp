@@ -5,10 +5,9 @@ Created on July, 2018
 
 @author: Tangrizzly
 """
-
 import networkx as nx
 import numpy as np
-
+import datetime
 
 def build_graph(train_data):
     graph = nx.DiGraph()
