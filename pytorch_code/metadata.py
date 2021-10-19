@@ -1,8 +1,13 @@
 
 import copy
+from os import terminal_size
 from icecream import ic
 from unittest2 import util
-from pretty_printer import print_warning, print_message
+from global_items import LAST_TXT, TRUE_LIST
+from biksLog import get_logger
+import sys
+
+log = get_logger()
 
 ZERO = '0'
 ONE = '1'
@@ -31,26 +36,25 @@ def get_default_dict():
     
     return new_dict
 
-def introduce_keys(lst):
-    msg = f"A new experiment is about to execute.\nThis experiment will execute with {len(lst)} variation(s).\nThese varations include:"
-    
-    for obj in lst:
-        msg += f"\n  - {obj.get_key()}"
-    
-    msg += "\nEach index in the keys represents the following:\n"
-    
-    tmp = metadataObj()
-    
-    msg += tmp.get_keys_meaning()
-    
-    print_message(msg)
-
-
 def get_key_count():
     obj = metadataObj()
     return len(obj.meta_dict.keys())
 
-def get_metadata_list(key_list):
+def save_mutations(key_mutations):
+    if len(key_mutations) > 0:
+        last_str = key_mutations[0]
+        
+        for m in key_mutations[1:]:
+            last_str += "," + m
+        
+        try:
+            with open(LAST_TXT, 'a') as fd:
+                fd.write(f'{last_str}\n')
+        except Exception as e:
+            log.exception(f"Unabel to add string to last.txt. {e}")
+            sys.exit()
+
+def parse_keylist(key_list, is_runlast=False):
     assert type(key_list) == list, "'get_metadata_list' -  This method should recieve a list as input."
     
     metadata_list = []
@@ -61,15 +65,50 @@ def get_metadata_list(key_list):
         if is_valid_key(key, key_count):
             key_mutations.extend(get_key_mutations(key))
         else:
-            print_warning(f"The following key was not valid: {key}", method_name='get_metadata_list', end_program=True)
+            log.warning(f"The following input key was not valid: '{key}'")
+            sys.exit()
 
     key_mutations = [x.ljust(key_count, DEFAULT_CHAR) for x in key_mutations]
     key_mutations = list(set(key_mutations))
+    
+    if not is_runlast:
+        save_mutations(key_mutations)
     
     for keymutation in key_mutations:
         metadata_list.append(metadataObj(keymutation))
     
     return metadata_list
+
+def parse_runall():
+    ret_str = ''
+    keycount = get_key_count()
+    
+    ret_str = ret_str.ljust(keycount, '_')
+    
+    return parse_keylist([ret_str])
+
+def parse_runlast():
+    try:
+        a_file = open(LAST_TXT, "r")
+        lines = a_file.readlines()
+        if len(lines) > 0:
+            last_line = lines[-1].split(',')
+            last_line = [x.strip() for x in last_line]
+            return parse_keylist(last_line, is_runlast=True)
+        else:
+            log.warning("No record of previous runs exists. The next run will be default true list")
+            return parse_keylist(['1'] , is_runlast=True)
+    except Exception as e:
+        log.exception(f"Unable to read last key from '{LAST_TXT}'")
+        sys.exit()
+
+def get_metadata_list(key_list, runall, runlast):
+    if runall in TRUE_LIST:
+        return parse_runall()
+    elif runlast in TRUE_LIST:
+        return parse_runlast()
+    else:
+        return parse_keylist(key_list)
 
 def is_valid_key(key, key_count):
     if len(key) > key_count:
@@ -135,9 +174,8 @@ class metadataObj():
         if key in self.meta_dict:
             return self.meta_dict[key]
         else:
-            # TODO: Crash the program
-            print("oh no")
-        # return key in self.meta_dict and self.meta_dict[key] == True
+            log.exception(f"The following key is not in self.meta_dict: {key}")
+            sys.exit()
     
     def get_key(self):
         lst = list(self.meta_dict.values())

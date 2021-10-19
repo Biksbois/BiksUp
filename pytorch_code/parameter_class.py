@@ -1,24 +1,7 @@
-# parser.add_argument('--dataset', default='sample', help='dataset name: diginetica/yoochoose1_4/yoochoose1_64/sample')
+from biksLog import get_logger
+import sys
 
-# parser.add_argument('--batchSize', type=int, default=100, help='input batch size')
-# parser.add_argument('--hiddenSize', type=int, default=100, help='hidden state size')
-# parser.add_argument('--epoch', type=int, default=30, help='the number of epochs to train for')
-# parser.add_argument('--lr', type=float, default=0.001, help='learning rate')  # [0.001, 0.0005, 0.0001]
-# parser.add_argument('--lr_dc', type=float, default=0.1, help='learning rate decay rate')
-# parser.add_argument('--lr_dc_step', type=int, default=3, help='the number of steps after which the learning rate decay')
-# parser.add_argument('--l2', type=float, default=1e-5, help='l2 penalty')  # [0.001, 0.0005, 0.0001, 0.00005, 0.00001]
-# parser.add_argument('--step', type=int, default=1, help='gnn propogation steps')
-# parser.add_argument('--patience', type=int, default=10, help='the number of epoch to wait before early stop ')
-# parser.add_argument('--valid_portion', type=float, default=0.1, help='split the portion of training set as validation set')
-# parser.add_argument('--runall', type=bool, default=False, help="Run all permutations of key combinations")
-
-# parser.add_argument('--nonhybrid', action='store_true', help='only use the global preference to predict')
-# parser.add_argument('--validation', action='store_true', help='validation')
-
-# parser.add_argument('--l', nargs='+', default=[''], help="List of boolean keys of what permutation to execute, '1' = True, '0'=False, '-' = True and False. Example: ['1110-00']")
-
-
-
+log = get_logger()
 
 class parameterObj():
     def __init__(self, arg_name=None, arg_default='', arg_help=None, arg_type=None, arg_nargs=None, arg_action=None) -> None:
@@ -39,8 +22,8 @@ class parameterObj():
         elif self.arg_type == None and not self.arg_default == '' and self.arg_action == None and not self.arg_nargs == None:
             parser.add_argument(self.arg_name, nargs=self.arg_nargs, default=self.arg_default, help=self.arg_help)
         else:
-            # TODO: End program
-            print("this should not happen. parameter_class.py")
+            log.exception("This is an invalid type of argument, and is not handled. parameter_class.py")
+            sys.exit()
 
 
 def get_parameters():
@@ -59,8 +42,9 @@ def get_parameters():
     parameter_list.append(parameterObj(arg_name='--nonhybrid', arg_action='store_true', arg_help='only use the global preference to predict'))
     parameter_list.append(parameterObj(arg_name='--validation', arg_action='store_true', arg_help='validation'))
     parameter_list.append(parameterObj(arg_name='--valid_portion', arg_type=float, arg_default=0.1, arg_help='split the portion of training set as validation set'))
-    parameter_list.append(parameterObj(arg_name='--l', arg_nargs='+', arg_default=[''], arg_help="List of boolean keys of what permutation to execute, '1' = True, '0'=False, '-' = True and False. Example: ['1110-00']"))
+    parameter_list.append(parameterObj(arg_name='--keys', arg_nargs='+', arg_default=[], arg_help="List of boolean keys of what permutation to execute, '1' = True, '0'=False, '-' = True and False. Example: ['1110-00']"))
     parameter_list.append(parameterObj(arg_name='--runall', arg_type=bool, arg_default=False, arg_help="Run all permutations of key combinations"))
+    parameter_list.append(parameterObj(arg_name='--runlast', arg_type=bool, arg_default=False, arg_help="Run the last executed variation of the --keys argument"))
 
     return parameter_list
 

@@ -11,28 +11,30 @@ import pickle
 import time
 from utils import build_graph, Data, split_validation
 from model import *
-from metadata import metadataObj, introduce_keys, get_metadata_list, data_dict
-from pretty_printer import print_hyperparameters, introduce_biksup, print_keys, print_seeds
+from metadata import metadataObj, get_metadata_list, data_dict
+from pretty_printer import print_hyperparameters, introduce_biksup, check_if_valid
 from parameter_class import parameterObj, get_parameters
-
+from biksLog import get_logger
+import sys
 from icecream import ic
 
+
+log = get_logger()
 parser = argparse.ArgumentParser()
 parameters = get_parameters()
 for p in parameters:
     p.add_new_argument(parser)
 opt = parser.parse_args()
-# print(opt)
 
 
 def main():
-    parsed_keys = get_metadata_list(opt.l)
-    
-    introduce_biksup(parameters, parsed_keys, data_dict)
+    check_if_valid(opt)
+    parsed_keys = get_metadata_list(opt.keys, opt.runall, opt.runlast)
+    introduce_biksup(parameters, parsed_keys, data_dict, opt)
     
     for i in range(len(parsed_keys)):
         print(f" - For key number {i}, this iteration wants to:")
-        
+
         cur_key = parsed_keys[i]
         
         if cur_key.test_case('key_01'):
