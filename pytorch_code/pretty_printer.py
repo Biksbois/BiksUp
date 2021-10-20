@@ -85,7 +85,7 @@ def invalid_arguments(opt):
         count += 1
     if opt.runlast in TRUE_LIST:
         count += 1
-    if len(opt.keys) > 0:
+    if len(opt.keys) > 0 and not opt.keys == ['1']:
         count += 1
     return False if count == 1 else True
 
