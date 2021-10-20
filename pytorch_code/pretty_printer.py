@@ -80,7 +80,6 @@ def print_md(md_path):
 def invalid_arguments(opt):
     count = 0
     
-
     if opt.runall in TRUE_LIST :
         count += 1
     if opt.runlast in TRUE_LIST:

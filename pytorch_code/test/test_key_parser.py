@@ -5,15 +5,15 @@ from parameterized import parameterized
 
 class TestKeyParser(unittest2.TestCase):
     @parameterized.expand([
-        [["0011_11", "000_"], 4],
-        [["0011_11", "000_", "__"], 7],
-        [["_____"], 32],
+        [["00_1", "00_"], 2],
+        [["00_1", "00_", "__"], 5],
+        [["___"], 8],
         [["000", "000"], 1],
         [["000", "00_"], 2],
         [["0", "01"], 1]
     ])
     def test_get_key_length(self, actual, expected_length):
-        actual_list = get_metadata_list(actual)
+        actual_list = get_metadata_list(actual, False, False)
         
         self.assertEqual(len(actual_list), expected_length)
     
@@ -30,18 +30,18 @@ class TestKeyParser(unittest2.TestCase):
         
         expected_obj = metadataObj()
         
-        expected_obj.meta_dict['key_01'] = boolList[0]
-        expected_obj.meta_dict['key_02'] = boolList[1]
-        expected_obj.meta_dict['key_03'] = boolList[2]
+        expected_obj.meta_dict['nonhybrid'] = boolList[0]
+        expected_obj.meta_dict['attention'] = boolList[1]
+        expected_obj.meta_dict['local'] = boolList[2]
         
         self.assertEqual(actual_obj, expected_obj)
     
     @parameterized.expand([
-        ['0010'],
-        ['____'],
+        ['001'],
+        ['__'],
         ['1'],
         [''],
-        ['1111111111']
+        ['111']
     ])
     def test_valid_key(self, input_key):
         actual = is_valid_key(input_key, 10)

@@ -14,14 +14,14 @@ ONE = '1'
 BOTH = '_'
 
 data_dict =  {
-    'key_01':'This is test key 1',
-    'key_02':'This is test key 2',
-    'key_03':'This is test key 3',
-    'key_04':'This is test key 4',
-    'key_05':'This is test key 5',
-    'key_06':'This is test key 6',
-    'key_07':'This is test key 7',
-    'key_08':'This is test key 8',
+    'nonhybrid':'TODO: What is nonhybrid',
+    'attention':'TODO: What is attention',
+    'local':'TODO: What is local',
+    'GRU_weights':'TODO: What is GRU_weights',
+    # 'key_05':'This is test key 5',
+    # 'key_06':'This is test key 6',
+    # 'key_07':'This is test key 7',
+    # 'key_08':'This is test key 8',
 }
 
 VALID_KEY_VALUES = [ZERO, ONE, BOTH]

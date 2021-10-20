@@ -35,23 +35,30 @@ class GNN(Module):
         self.linear_edge_out = nn.Linear(self.hidden_size, self.hidden_size, bias=True)
         self.linear_edge_f = nn.Linear(self.hidden_size, self.hidden_size, bias=True)
 
-    def GNNCell(self, A, hidden):
+    def GNNCell(self, A, hidden, cur_key):
         input_in = torch.matmul(A[:, :, :A.shape[1]], self.linear_edge_in(hidden)) + self.b_iah
         input_out = torch.matmul(A[:, :, A.shape[1]: 2 * A.shape[1]], self.linear_edge_out(hidden)) + self.b_oah
         inputs = torch.cat([input_in, input_out], 2)
-        gi = F.linear(inputs, self.w_ih, self.b_ih)
-        gh = F.linear(hidden, self.w_hh, self.b_hh)
+        
+        if cur_key.test_case("GRU_weights"):
+            gi = F.linear(inputs, self.w_ih, self.b_ih)
+            gh = F.linear(hidden, self.w_hh, self.b_hh)
+        else:
+            gi = torch.matmul(inputs, torch.ones(self.gate_size, self.input_size))
+            gh = torch.matmul(inputs, torch.ones(self.gate_size, self.hidden_size))
+        
         i_r, i_i, i_n = gi.chunk(3, 2)
         h_r, h_i, h_n = gh.chunk(3, 2)
         resetgate = torch.sigmoid(i_r + h_r)
         inputgate = torch.sigmoid(i_i + h_i)
         newgate = torch.tanh(i_n + resetgate * h_n)
+        
         hy = newgate + inputgate * (hidden - newgate)
         return hy
 
-    def forward(self, A, hidden):
+    def forward(self, A, hidden, cur_key):
         for i in range(self.step):
-            hidden = self.GNNCell(A, hidden)
+            hidden = self.GNNCell(A, hidden, cur_key)
         return hidden
 
 
@@ -78,19 +85,28 @@ class SessionGraph(Module):
         for weight in self.parameters():
             weight.data.uniform_(-stdv, stdv)
 
-    def compute_scores(self, hidden, mask):
+    def compute_scores(self, hidden, mask, cur_key):
         ht = hidden[torch.arange(mask.shape[0]).long(), torch.sum(mask, 1) - 1]  # batch_size x latent_size
-        q1 = self.linear_one(ht).view(ht.shape[0], 1, ht.shape[1])  # batch_size x 1 x latent_size
-        q2 = self.linear_two(hidden)  # batch_size x seq_length x latent_size
-        alpha = self.linear_three(torch.sigmoid(q1 + q2))
-        a = torch.sum(alpha * hidden * mask.view(mask.shape[0], -1, 1).float(), 1)
-        if not self.nonhybrid:
+        
+        # if not self.nonhybrid:
+        if not cur_key.test_case("nonhybrid"):
+            if cur_key.test_case("attention"):
+                q1 = self.linear_one(ht).view(ht.shape[0], 1, ht.shape[1])  # batch_size x 1 x latent_size
+                q2 = self.linear_two(hidden)  # batch_size x seq_length x latent_size
+                alpha = self.linear_three(torch.sigmoid(q1 + q2))
+            else:
+                # Uniform distribution
+                alpha = torch.ones(self.batch_size, hidden.shape[1], 1) * (1 / hidden.shape[1])
+            
+            a = torch.sum(alpha * hidden * mask.view(mask.shape[0], -1, 1).float(), 1)
             a = self.linear_transform(torch.cat([a, ht], 1))
+        elif cur_key.test_case("local"):
+            a = ht
         b = self.embedding.weight[1:]  # n_nodes x latent_size
         scores = torch.matmul(a, b.transpose(1, 0))
         return scores
 
-    def forward(self, inputs, A):
+    def forward(self, inputs, A,):
         hidden = self.embedding(inputs)
         hidden = self.gnn(A, hidden)
         return hidden
@@ -110,7 +126,7 @@ def trans_to_cpu(variable):
         return variable
 
 
-def forward(model, i, data):
+def forward(model, i, data, cur_key):
     alias_inputs, A, items, mask, targets = data.get_slice(i)
     alias_inputs = trans_to_cuda(torch.Tensor(alias_inputs).long())
     items = trans_to_cuda(torch.Tensor(items).long())
@@ -119,23 +135,25 @@ def forward(model, i, data):
     hidden = model(items, A)
     get = lambda i: hidden[i][alias_inputs[i]]
     seq_hidden = torch.stack([get(i) for i in torch.arange(len(alias_inputs)).long()])
-    return targets, model.compute_scores(seq_hidden, mask)
+    return targets, model.compute_scores(seq_hidden, mask, cur_key)
 
 
-def train_test(model, train_data, test_data):
+def train_test(model, train_data, test_data, cur_key):
     model.scheduler.step()
     print('start training: ', datetime.datetime.now())
     model.train()
     total_loss = 0.0
+    loss_list = []
     slices = train_data.generate_batch(model.batch_size)
     for i, j in zip(slices, np.arange(len(slices))):
         model.optimizer.zero_grad()
-        targets, scores = forward(model, i, train_data)
+        targets, scores = forward(model, i, train_data, cur_key)
         targets = trans_to_cuda(torch.Tensor(targets).long())
         loss = model.loss_function(scores, targets - 1)
         loss.backward()
         model.optimizer.step()
         total_loss += loss
+        loss_list.append(loss)
         if j % int(len(slices) / 5 + 1) == 0:
             print('[%d/%d] Loss: %.4f' % (j, len(slices), loss.item()))
     print('\tLoss:\t%.3f' % total_loss)
@@ -145,7 +163,7 @@ def train_test(model, train_data, test_data):
     hit, mrr = [], []
     slices = test_data.generate_batch(model.batch_size)
     for i in slices:
-        targets, scores = forward(model, i, test_data)
+        targets, scores = forward(model, i, test_data, cur_key)
         sub_scores = scores.topk(20)[1]
         sub_scores = trans_to_cpu(sub_scores).detach().numpy()
         for score, target, mask in zip(sub_scores, targets, test_data.mask):
@@ -156,4 +174,5 @@ def train_test(model, train_data, test_data):
                 mrr.append(1 / (np.where(score == target - 1)[0][0] + 1))
     hit = np.mean(hit) * 100
     mrr = np.mean(mrr) * 100
-    return hit, mrr
+    
+    return hit, mrr, loss_list, total_loss
