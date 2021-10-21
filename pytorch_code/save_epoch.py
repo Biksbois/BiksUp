@@ -7,6 +7,7 @@ import sys
 import pandas as pd
 from biksLog import get_logger
 from functools import reduce
+from icecream import ic
 
 log = get_logger()
 
@@ -79,11 +80,17 @@ def save_avg_csv(pd_sum, avg_path, p):
 def save_average(iter, folder_name, parsed_keys, root_path=CSV_FOLDER, save_root=AVG_FOLDER):
     for p in parsed_keys:
         pd_list = []
-        for i in range(int(iter)):
+        for i in range(int(iter) + 1):
             pd_list.append(get_one_file(root_path, folder_name, i, p.get_key()))
         
-        pd_sum = reduce(lambda a, b: a.add(b, fill_value=0), pd_list)
-        pd_sum = pd_sum / len(pd_list)
+        if len(pd_list)==1:
+            pd_sum = pd_list[0]
+        elif len(pd_list) == 0:
+            log.exception(f"When saving for key {p.get_key()}, no files are extracted.")
+            break
+        else:
+            pd_sum = reduce(lambda a, b: a.add(b, fill_value=0), pd_list)
+            pd_sum = pd_sum / len(pd_list)
         
         save_path = os.path.join(save_root, folder_name)
         save_avg_csv(pd_sum, save_path, p.get_key())

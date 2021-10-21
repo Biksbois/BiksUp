@@ -1,5 +1,6 @@
 import unittest2
 from save_epoch import save_average
+from metadata import get_metadata_list
 from parameterized import parameterized
 import os
 
@@ -10,5 +11,6 @@ class TestKeyParser(unittest2.TestCase):
     def test_avg_csv(self, folder, keys):
         root_path = os.path.join('test', 'test_csv')
         avg_path = os.path.join(root_path, 'AVG')
-        save_average(3, folder, keys, root_path=root_path, save_root=avg_path)
+        metadata = get_metadata_list(keys, False, False, do_log=False)
+        save_average(2, folder, metadata, root_path=root_path, save_root=avg_path)
         self.assertTrue(True)
