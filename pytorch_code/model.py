@@ -102,6 +102,7 @@ class SessionGraph(Module):
             a = self.linear_transform(torch.cat([a, ht], 1))
         elif cur_key.test_case("local"):
             a = ht
+        
         b = self.embedding.weight[1:]  # n_nodes x latent_size
         scores = torch.matmul(a, b.transpose(1, 0))
         return scores

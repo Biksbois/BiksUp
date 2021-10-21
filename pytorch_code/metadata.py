@@ -1,7 +1,7 @@
 
 import copy
-from os import terminal_size
 from icecream import ic
+from numpy import fabs
 from unittest2 import util
 from global_items import LAST_TXT, TRUE_LIST
 from biksLog import get_logger
@@ -13,15 +13,13 @@ ZERO = '0'
 ONE = '1'
 BOTH = '_'
 
+ILLIGAL_KEYS = ['1_0', '0_1', '111']
+
 data_dict =  {
     'nonhybrid':'TODO: What is nonhybrid',
     'attention':'TODO: What is attention',
     'local':'TODO: What is local',
     'GRU_weights':'TODO: What is GRU_weights',
-    # 'key_05':'This is test key 5',
-    # 'key_06':'This is test key 6',
-    # 'key_07':'This is test key 7',
-    # 'key_08':'This is test key 8',
 }
 
 VALID_KEY_VALUES = [ZERO, ONE, BOTH]
@@ -54,7 +52,7 @@ def save_mutations(key_mutations):
             log.exception(f"Unabel to add string to last.txt. {e}")
             sys.exit()
 
-def parse_keylist(key_list, is_runlast=False):
+def parse_keylist(key_list, is_runlast=False, do_log=True):
     assert type(key_list) == list, "'get_metadata_list' -  This method should recieve a list as input."
     
     metadata_list = []
@@ -62,14 +60,16 @@ def parse_keylist(key_list, is_runlast=False):
     key_count = get_key_count()
     
     for key in key_list:
-        if is_valid_key(key, key_count):
+        if is_valid_key(key, key_count, do_log=do_log):
+            # if not contains_illigal_key(key):
             key_mutations.extend(get_key_mutations(key))
         else:
-            log.warning(f"The following input key was not valid: '{key}'")
             sys.exit()
 
     key_mutations = [x.ljust(key_count, DEFAULT_CHAR) for x in key_mutations]
     key_mutations = list(set(key_mutations))
+    key_mutations = [key for key in key_mutations if not contains_illigal_key(key, do_log=do_log)]
+    
     
     if not is_runlast:
         save_mutations(key_mutations)
@@ -102,20 +102,37 @@ def parse_runlast():
         log.exception(f"Unable to read last key from '{LAST_TXT}'")
         sys.exit()
 
-def get_metadata_list(key_list, runall, runlast):
+def get_metadata_list(key_list, runall, runlast, do_log=True):
     if runall in TRUE_LIST:
         return parse_runall()
     elif runlast in TRUE_LIST:
         return parse_runlast()
     else:
-        return parse_keylist(key_list)
+        return parse_keylist(key_list, do_log=do_log)
 
-def is_valid_key(key, key_count):
+def contains_illigal_key(key, do_log=True):
+    illigal_keys = []
+    
+    for ill in ILLIGAL_KEYS:
+        illigal_keys.extend(get_key_mutations(ill))
+    
+    for illigal in illigal_keys:
+        if key[:len(illigal)] == illigal:
+            if do_log:
+                log.warning(f"The following input key contains the invalid start '{illigal}'. This key will not be added, but the program will continue: '{key}'")
+            return True
+    return False
+
+def is_valid_key(key, key_count, do_log=True):
     if len(key) > key_count:
+        if do_log:
+            log.warning(f"The following input key is too long. Keylength = {len(key)} > maxlenght = {key_count}: '{key}'")
         return False
     else:
         for i in key:
             if not i in VALID_KEY_VALUES:
+                if do_log:
+                    log.warning(f"The following input key contains illigal character. Can only be '{ZERO}', '{ONE}' and '{BOTH}' and not '{i}': '{key}'")
                 return False
         return True
 

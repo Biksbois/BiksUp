@@ -1,19 +1,19 @@
 import unittest2
-from metadata import get_metadata_list, metadataObj, is_valid_key, get_key_mutations, get_key_count, DEFAULT_BOOL
+from metadata import get_metadata_list, metadataObj, is_valid_key, get_key_mutations, get_key_count, DEFAULT_BOOL, contains_illigal_key
 from parameterized import parameterized
 
 
 class TestKeyParser(unittest2.TestCase):
     @parameterized.expand([
-        [["00_1", "00_"], 2],
-        [["00_1", "00_", "__"], 5],
-        [["___"], 8],
+        [["00_1", "00_"], 1],
+        [["00_1", "00_", "__"], 2],
+        [["___"], 3],
         [["000", "000"], 1],
-        [["000", "00_"], 2],
-        [["0", "01"], 1]
+        [["000", "00_"], 1],
+        [["0", "01"], 0]
     ])
     def test_get_key_length(self, actual, expected_length):
-        actual_list = get_metadata_list(actual, False, False)
+        actual_list = get_metadata_list(actual, False, False, do_log=False)
         
         self.assertEqual(len(actual_list), expected_length)
     
@@ -44,7 +44,7 @@ class TestKeyParser(unittest2.TestCase):
         ['111']
     ])
     def test_valid_key(self, input_key):
-        actual = is_valid_key(input_key, 10)
+        actual = is_valid_key(input_key, 10, do_log=False)
         
         self.assertTrue(actual)
     
@@ -55,9 +55,32 @@ class TestKeyParser(unittest2.TestCase):
         [' '],
     ])
     def test_not_valid_key(self, input):
-        actual = is_valid_key(input, 10)
+        actual = is_valid_key(input, 10, do_log=False)
         self.assertFalse(actual)
 
+    @parameterized.expand([
+        ['00000'],
+        ['0000'],
+        ['010'],
+        ['000']
+    ])
+    def test_contains_not_illigal_combination(self, input_key):
+        actual = contains_illigal_key(input_key, do_log=False)
+        self.assertFalse(actual)
+    
+    @parameterized.expand([
+        ['100'],
+        ['011'],
+        ['0111'],
+        ['110'],
+        ['001'],
+        ['001000'],
+        ['0111'],
+    ])
+    def test_contains_illigal_combination(self, input_key):
+        actual = contains_illigal_key(input_key, do_log=False)
+        self.assertTrue(actual)
+    
     @parameterized.expand([
         ['1111', ['1111']],
         ['0', ['0']],
