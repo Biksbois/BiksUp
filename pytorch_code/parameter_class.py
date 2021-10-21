@@ -45,6 +45,7 @@ def get_parameters():
     parameter_list.append(parameterObj(arg_name='--keys', arg_nargs='+', arg_default=['0101'], arg_help="List of boolean keys of what permutation to execute, '1' = True, '0'=False, '_' = True and False. Example: ['1110_00']"))
     parameter_list.append(parameterObj(arg_name='--runall', arg_type=bool, arg_default=False, arg_help="Run all permutations of key combinations"))
     parameter_list.append(parameterObj(arg_name='--runlast', arg_type=bool, arg_default=False, arg_help="Run the last executed variation of the --keys argument"))
+    parameter_list.append(parameterObj(arg_name='--iterations', arg_type=int, arg_default=1, arg_help="How many times the experiments should run"))
 
     return parameter_list
 

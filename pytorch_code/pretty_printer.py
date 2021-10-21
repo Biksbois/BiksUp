@@ -48,6 +48,8 @@ def get_default(opt, p):
         return opt.runall
     elif p.arg_name == '--runlast':
         return opt.runlast
+    elif p.arg_name == '--iterations':
+        return opt.iterations
     else:
         log.exception(f"The parameter {p.arg_name} has not been implemented correctly when getting default parameters.")
         return p.arg_default

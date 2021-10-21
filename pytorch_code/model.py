@@ -107,9 +107,9 @@ class SessionGraph(Module):
         scores = torch.matmul(a, b.transpose(1, 0))
         return scores
 
-    def forward(self, inputs, A,):
+    def forward(self, inputs, A, cur_key):
         hidden = self.embedding(inputs)
-        hidden = self.gnn(A, hidden)
+        hidden = self.gnn(A, hidden, cur_key)
         return hidden
 
 
@@ -133,7 +133,7 @@ def forward(model, i, data, cur_key):
     items = trans_to_cuda(torch.Tensor(items).long())
     A = trans_to_cuda(torch.Tensor(A).float())
     mask = trans_to_cuda(torch.Tensor(mask).long())
-    hidden = model(items, A)
+    hidden = model(items, A, cur_key)
     get = lambda i: hidden[i][alias_inputs[i]]
     seq_hidden = torch.stack([get(i) for i in torch.arange(len(alias_inputs)).long()])
     return targets, model.compute_scores(seq_hidden, mask, cur_key)
@@ -153,8 +153,8 @@ def train_test(model, train_data, test_data, cur_key):
         loss = model.loss_function(scores, targets - 1)
         loss.backward()
         model.optimizer.step()
-        total_loss += loss
-        loss_list.append(loss)
+        total_loss += loss.item()
+        loss_list.append(loss.item())
         if j % int(len(slices) / 5 + 1) == 0:
             print('[%d/%d] Loss: %.4f' % (j, len(slices), loss.item()))
     print('\tLoss:\t%.3f' % total_loss)
