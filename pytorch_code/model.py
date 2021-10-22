@@ -20,6 +20,7 @@ import sys
 class GNN(Module):
     def __init__(self, hidden_size, step=1):
         super(GNN, self).__init__()
+        torch.manual_seed(0)
         self.step = step
         self.hidden_size = hidden_size
         self.input_size = hidden_size * 2
@@ -44,11 +45,12 @@ class GNN(Module):
             gi = F.linear(inputs, self.w_ih, self.b_ih)
             gh = F.linear(hidden, self.w_hh, self.b_hh)
         else:
-            gi = torch.matmul(inputs, torch.ones(self.gate_size, self.input_size))
-            gh = torch.matmul(inputs, torch.ones(self.gate_size, self.hidden_size))
+            gi = torch.matmul(inputs, torch.ones(self.input_size, self.gate_size))
+            gh = torch.matmul(hidden, torch.ones(self.hidden_size, self.gate_size))
         
         i_r, i_i, i_n = gi.chunk(3, 2)
         h_r, h_i, h_n = gh.chunk(3, 2)
+        
         resetgate = torch.sigmoid(i_r + h_r)
         inputgate = torch.sigmoid(i_i + h_i)
         newgate = torch.tanh(i_n + resetgate * h_n)
@@ -96,7 +98,7 @@ class SessionGraph(Module):
                 alpha = self.linear_three(torch.sigmoid(q1 + q2))
             else:
                 # Uniform distribution
-                alpha = torch.ones(self.batch_size, hidden.shape[1], 1) * (1 / hidden.shape[1])
+                alpha = torch.ones(hidden.shape[0], hidden.shape[1], 1) * (1 / hidden.shape[1])
             
             a = torch.sum(alpha * hidden * mask.view(mask.shape[0], -1, 1).float(), 1)
             a = self.linear_transform(torch.cat([a, ht], 1))

@@ -12,6 +12,7 @@ from rich.panel import Panel
 from rich.padding import Padding
 
 from global_items import TRUE_LIST
+from global_items import DEFAULT_INPUTKEY
 
 log = get_logger()
 
@@ -86,7 +87,7 @@ def invalid_arguments(opt):
         count += 1
     if opt.runlast in TRUE_LIST:
         count += 1
-    if len(opt.keys) > 0 and not opt.keys == ['1']:
+    if len(opt.keys) > 0 and not opt.keys == DEFAULT_INPUTKEY:
         count += 1
     return False if count == 1 else True
 

@@ -1,6 +1,9 @@
 from biksLog import get_logger
 import sys
 
+from global_items import DEFAULT_INPUTKEY
+
+
 log = get_logger()
 
 class parameterObj():
@@ -42,7 +45,7 @@ def get_parameters():
     parameter_list.append(parameterObj(arg_name='--nonhybrid', arg_action='store_true', arg_help='only use the global preference to predict'))
     parameter_list.append(parameterObj(arg_name='--validation', arg_action='store_true', arg_help='validation'))
     parameter_list.append(parameterObj(arg_name='--valid_portion', arg_type=float, arg_default=0.1, arg_help='split the portion of training set as validation set'))
-    parameter_list.append(parameterObj(arg_name='--keys', arg_nargs='+', arg_default=['0101'], arg_help="List of boolean keys of what permutation to execute, '1' = True, '0'=False, '_' = True and False. Example: ['1110_00']"))
+    parameter_list.append(parameterObj(arg_name='--keys', arg_nargs='+', arg_default=DEFAULT_INPUTKEY, arg_help="List of boolean keys of what permutation to execute, '1' = True, '0'=False, '_' = True and False. Example: ['1110_00']"))
     parameter_list.append(parameterObj(arg_name='--runall', arg_type=bool, arg_default=False, arg_help="Run all permutations of key combinations"))
     parameter_list.append(parameterObj(arg_name='--runlast', arg_type=bool, arg_default=False, arg_help="Run the last executed variation of the --keys argument"))
     parameter_list.append(parameterObj(arg_name='--iterations', arg_type=int, arg_default=1, arg_help="How many times the experiments should run"))

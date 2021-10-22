@@ -97,7 +97,7 @@ def parse_runlast():
             return parse_keylist(last_line, is_runlast=True)
         else:
             log.warning("No record of previous runs exists. The next run will be default true list")
-            return parse_keylist(['1'] , is_runlast=True)
+            return parse_keylist(['0'] , is_runlast=True)
     except Exception as e:
         log.exception(f"Unable to read last key from '{LAST_TXT}'")
         sys.exit()

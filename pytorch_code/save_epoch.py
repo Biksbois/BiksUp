@@ -1,6 +1,5 @@
 import csv
 from datetime import datetime
-from genericpath import exists
 import os
 from biksLog import get_logger
 import sys
@@ -19,17 +18,26 @@ def get_foldername():
     now = datetime.now()
     return now.strftime("%d_%m_%Y-%H_%M_%S")
 
-def create_csv_folder(folder_name):
-    folder_path = os.path.join(CSV_FOLDER, folder_name)
-    exists = os.path.exists(folder_name)
-
+def try_create_folder(folder):
     try:
-        if not exists:
-            os.makedirs(folder_path)
-            log.info(f"Successfully created folder: {folder_path}")
+        os.makedirs(folder)
+        log.info(f"Successfully created folder: {folder}")
     except Exception as e:
         log.exception(f"{e} - Unable to create folder")
         sys.exit()
+
+def create_if_not_exists(folder):
+    exists = os.path.exists(folder)
+    
+    if not exists:
+        try_create_folder(folder)
+    else:
+        log.info(f"Path already exists: {folder}")
+
+def create_csv_folder(folder_name):
+    folder_path = os.path.join(CSV_FOLDER, folder_name)
+    create_if_not_exists(CSV_FOLDER)
+    create_if_not_exists(folder_path)
 
 def generate_csv_name(key, iter):
     return 'k_' + key + '_i_' + str(iter) + '.csv'
@@ -42,11 +50,9 @@ def save_epoch(folder_name, csv_name, duration, epoch, mrr, hit, loss, loss_evol
     
     csv_name = generate_csv_name(csv_name, iter)
     
-    # if not csv_name.endswith('.csv'):
-    #     csv_name += '.csv'
-    
     create_csv_folder(folder_name)
-    csv_path = os.path.join(CSV_FOLDER ,folder_name, csv_name)
+    
+    csv_path = os.path.join(CSV_FOLDER, folder_name, csv_name)
     
     try:
         with open(csv_path, 'w', encoding='UTF8', newline='') as f:
