@@ -31,14 +31,19 @@ def create_csv_folder(folder_name):
         log.exception(f"{e} - Unable to create folder")
         sys.exit()
 
-def save_epoch(folder_name, csv_name, duration, epoch, mrr, hit, loss, loss_evolution):
+def generate_csv_name(key, iter):
+    return 'k_' + key + '_i_' + str(iter) + '.csv'
+
+def save_epoch(folder_name, csv_name, duration, epoch, mrr, hit, loss, loss_evolution, iter):
     header = ['duration', 'epoch', 'mrr', 'hit', 'loss', 'loss_evolution']
     
     zipped_data = zip(duration, epoch, mrr, hit, loss, loss_evolution)
     data = [z for z in zipped_data]
     
-    if not csv_name.endswith('.csv'):
-        csv_name += '.csv'
+    csv_name = generate_csv_name(csv_name, iter)
+    
+    # if not csv_name.endswith('.csv'):
+    #     csv_name += '.csv'
     
     create_csv_folder(folder_name)
     csv_path = os.path.join(CSV_FOLDER ,folder_name, csv_name)
@@ -58,8 +63,8 @@ def save_epoch(folder_name, csv_name, duration, epoch, mrr, hit, loss, loss_evol
         sys.exit()
 
 
-def get_one_file(root_path, folder_name, i, p):
-    csv_path = os.path.join(root_path, str(i), folder_name, str(p) + '.csv')
+def get_one_file(root_path, folder_name, i, p, iter):
+    csv_path = os.path.join(root_path, str(i), folder_name, generate_csv_name(p, iter))
     try:
         temp_df = pd.read_csv(csv_path)
         temp_df.drop('loss_evolution', axis=1, inplace=True)
@@ -68,10 +73,11 @@ def get_one_file(root_path, folder_name, i, p):
         sys.exit()
     return temp_df
 
-def save_avg_csv(pd_sum, avg_path, p):
+def save_avg_csv(pd_sum, avg_path, p, iter):
+    # iterations = str(iter + 1)
     if not os.path.exists(avg_path):
         os.makedirs(avg_path)
-    avg_path = os.path.join(avg_path, p + '.csv')
+    avg_path = os.path.join(avg_path, generate_csv_name(p, iter))
     try:
         pd_sum.to_csv(avg_path, index=False)
     except Exception as e:
@@ -80,8 +86,8 @@ def save_avg_csv(pd_sum, avg_path, p):
 def save_average(iter, folder_name, parsed_keys, root_path=CSV_FOLDER, save_root=AVG_FOLDER):
     for p in parsed_keys:
         pd_list = []
-        for i in range(int(iter) + 1):
-            pd_list.append(get_one_file(root_path, folder_name, i, p.get_key()))
+        for i in range(int(iter)):
+            pd_list.append(get_one_file(root_path, folder_name, i, p.get_key(), iter))
         
         if len(pd_list)==1:
             pd_sum = pd_list[0]
@@ -93,7 +99,7 @@ def save_average(iter, folder_name, parsed_keys, root_path=CSV_FOLDER, save_root
             pd_sum = pd_sum / len(pd_list)
         
         save_path = os.path.join(save_root, folder_name)
-        save_avg_csv(pd_sum, save_path, p.get_key())
+        save_avg_csv(pd_sum, save_path, p.get_key(), iter)
 
 if __name__ == '__main__':
     folder_name = get_foldername()

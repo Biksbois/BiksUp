@@ -100,9 +100,8 @@ def main():
             print("Run time: %f s" % (end - start))
             minutes = (end - start)/60
             temp_folder_name = os.path.join(str(iter), folder_name)
-            save_epoch(temp_folder_name, cur_key.get_key(), [minutes, minutes], best_epoch, best_mrr, best_hit, best_loss, best_loss_list)
-    save_average(iter, folder_name, parsed_keys)
-
+            save_epoch(temp_folder_name, cur_key.get_key(), [minutes, minutes], best_epoch, best_mrr, best_hit, best_loss, best_loss_list, opt.iterations)
+    save_average(opt.iterations, folder_name, parsed_keys)
 
 if __name__ == '__main__':
     main()
