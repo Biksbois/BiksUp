@@ -7,6 +7,9 @@ __pycache__/
 *.so
 
 pytorch_code/csv_files/
+pytorch_code/logfile.log
+logfile.log
+
 
 # Distribution / packaging
 .Python
