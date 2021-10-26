@@ -119,9 +119,13 @@ def print_keys(keys):
     introduce_keys()
     
     key_str = "[bright_yellow]\n"
+    log_str = ''
     
     for i in range(len(keys)):
         key_str += f"Index: {str(i).rjust(3, '0')} | Key: {keys[i].get_key()}\n"
+        log_str += f' {keys[i].get_key()}'
+    
+    log.info(f'New run with the following keys: {log_str}')
     
     print(Padding(Panel(key_str, title="All input keys contains", subtitle="Let the biksing being!"), (4,4)))
 
@@ -134,3 +138,26 @@ def print_seeds(data_dict):
         seed_str += f"[bright_yellow]Index: {str(i).rjust(3, '0')} | Name: {str(list(data_dict.keys())[i]).ljust(10, ' ')} | Desc: {str(list(data_dict.values())[i])}\n"
     
     print(Padding(Panel(seed_str, title="All keys contains", subtitle="Let the biksing being!"), (4,4)))
+
+def left_str(input, pad=30):
+    return str(input).ljust(pad)
+
+def right_str(input, pad=30):
+    return str(input).rjust(pad)
+
+def add_arr_str(name, arr):
+    return right_str(name, pad=20) + ' : ' + right_str(arr[0]) + ' | ' + left_str(arr[1]) + '\n'
+
+def to_two_decimals(int_list):
+    return ["{:.2f}".format(x) for x in int_list]
+
+def print_best_results(best_hit, best_mrr, best_epoch, key, iteration):
+    lines = '\n'
+    
+    lines += add_arr_str('Key', [key, key])
+    lines += add_arr_str('Iteration', [iteration, iteration])
+    lines += add_arr_str('Epoch', best_epoch)
+    lines += add_arr_str('Best hit', to_two_decimals(best_hit))
+    lines += add_arr_str('Best MRR', to_two_decimals(best_mrr))
+    
+    print(Padding(Panel(lines, title=f"The best data for key {key} at iteration {iteration}", subtitle="Let the biksing being!"), (4,4)))

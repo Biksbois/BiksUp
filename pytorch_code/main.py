@@ -14,7 +14,7 @@ from torch.nn.functional import fold
 from utils import build_graph, Data, split_validation
 from model import *
 from metadata import metadataObj, get_metadata_list, data_dict
-from pretty_printer import print_hyperparameters, introduce_biksup, check_if_valid
+from pretty_printer import print_hyperparameters, introduce_biksup, check_if_valid, print_best_results
 from parameter_class import parameterObj, get_parameters
 from biksLog import get_logger
 import sys
@@ -38,7 +38,6 @@ def main():
     folder_name = get_foldername()
     
     with Progress(auto_refresh=False) as progress:
-        
         progress_list = []
         
         for k in parsed_keys:
@@ -80,8 +79,6 @@ def main():
                 
                 bad_counter = 0
                 for epoch in range(opt.epoch):
-                    # print('-------------------------------------------------------')
-                    # print('epoch: ', epoch)
                     hit, mrr, loss_list, total_loss = train_test(model, train_data, test_data, cur_key)
                     flag = 0
                     if hit >= best_hit[0]:
@@ -98,12 +95,17 @@ def main():
                         best_loss[1] = total_loss
                         best_loss_list[1] = loss_list
                         flag = 1
-                    # print('Best Result:')
-                    # print('\tRecall@20:\t%.4f\tMMR@20:\t%.4f\tEpoch:\t%d'% (best_hit[0], best_mrr[0], best_epoch[0]))
-                    # print('\tRecall@20:\t%.4f\tMMR@20:\t%.4f\tEpoch:\t%d'% (best_hit[1], best_mrr[1], best_epoch[1]))
                     bad_counter += 1 - flag
                     if bad_counter >= opt.patience:
                         break
+                
+                print_best_results(best_hit, best_mrr, best_epoch, cur_key.get_key(), iter)
+                
+                # print('-------------------------------------------------------')
+                # # print('epoch: ', epoch)
+                # print('Best Result:')
+                # print('\tRecall@20:\t%.4f\tMMR@20:\t%.4f\tEpoch:\t%d'% (best_hit[0], best_mrr[0], best_epoch[0]))
+                # print('\tRecall@20:\t%.4f\tMMR@20:\t%.4f\tEpoch:\t%d'% (best_hit[1], best_mrr[1], best_epoch[1]))
                 # print('-------------------------------------------------------')
                 progress.update(progress_list[i], advance=1)
                 progress.refresh()
