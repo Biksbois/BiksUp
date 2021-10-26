@@ -89,7 +89,7 @@ def invalid_arguments(opt):
         count += 1
     if len(opt.keys) > 0 and not opt.keys == DEFAULT_INPUTKEY:
         count += 1
-    return False if count == 1 else True
+    return False if count <= 1 else True
 
 def print_exit_keys():
     log.exception(f"Incorrect parameters give. Please only initialize on of the following three parameters: '--runall', '--runlast' and '--keys'")

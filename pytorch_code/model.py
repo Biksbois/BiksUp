@@ -143,7 +143,7 @@ def forward(model, i, data, cur_key):
 
 def train_test(model, train_data, test_data, cur_key):
     model.scheduler.step()
-    print('start training: ', datetime.datetime.now())
+    # print('start training: ', datetime.datetime.now())
     model.train()
     total_loss = 0.0
     loss_list = []
@@ -157,11 +157,11 @@ def train_test(model, train_data, test_data, cur_key):
         model.optimizer.step()
         total_loss += loss.item()
         loss_list.append(loss.item())
-        if j % int(len(slices) / 5 + 1) == 0:
-            print('[%d/%d] Loss: %.4f' % (j, len(slices), loss.item()))
-    print('\tLoss:\t%.3f' % total_loss)
+    #     if j % int(len(slices) / 5 + 1) == 0:
+    #         print('[%d/%d] Loss: %.4f' % (j, len(slices), loss.item()))
+    # print('\tLoss:\t%.3f' % total_loss)
 
-    print('start predicting: ', datetime.datetime.now())
+    # print('start predicting: ', datetime.datetime.now())
     model.eval()
     hit, mrr = [], []
     slices = test_data.generate_batch(model.batch_size)
