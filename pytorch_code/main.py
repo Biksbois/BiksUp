@@ -37,7 +37,7 @@ def main():
     introduce_biksup(parameters, parsed_keys, data_dict, opt)
     folder_name = get_foldername()
     
-    with Progress() as progress:
+    with Progress(auto_refresh=False) as progress:
         
         progress_list = []
         
@@ -106,6 +106,7 @@ def main():
                         break
                 # print('-------------------------------------------------------')
                 progress.update(progress_list[i], advance=1)
+                progress.refresh()
                 end = time.time()
                 # print("Run time: %f s" % (end - start))
                 minutes = (end - start)/60
