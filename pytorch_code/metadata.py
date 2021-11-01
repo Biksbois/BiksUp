@@ -13,13 +13,14 @@ ZERO = '0'
 ONE = '1'
 BOTH = '_'
 
-ILLIGAL_KEYS = ['1_0', '0_1', '111']
+ILLIGAL_KEYS = ['1_0', '0_1', '111', '_1__1']
 
 data_dict =  {
     'nonhybrid':'TODO: What is nonhybrid',
     'attention':'TODO: What is attention',
     'local':'TODO: What is local',
     'GRU_weights':'TODO: What is GRU_weights',
+    'uniform_attention': 'TODO: What is uniform attention',
 }
 
 VALID_KEY_VALUES = [ZERO, ONE, BOTH]
@@ -33,6 +34,9 @@ def get_default_dict():
         value = DEFAULT_BOOL
     
     return new_dict
+
+def get_data_dict():
+    return data_dict
 
 def get_key_count():
     obj = metadataObj()
@@ -208,6 +212,24 @@ class metadataObj():
             msg += f"\n    - {str(i).rjust(3, ZERO)} {list(self.meta_dict.keys())[i]}"
         
         return msg
+    
+    def use_attention(self):
+        if self.use_weighted_attention() and self.test_case("attention"):
+            log.exception(f"Invalid key. Both attention and weighted attention is enabled - {self.get_key()}")
+            sys.exit()
+        return self.test_case("attention")
+
+    def use_nonhybrid(self):
+        return self.test_case("nonhybrid")
+    
+    def use_weighted_attention(self):
+        return self.test_case("uniform_attention")
+    
+    def use_local(self):
+        return self.test_case("local")
+    
+    def use_GRU_weights(self):
+        return self.test_case("GRU_weights")
     
     def __eq__(self, other):
         return self.meta_dict == other.meta_dict

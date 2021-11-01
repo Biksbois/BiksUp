@@ -11,6 +11,7 @@ import pickle
 import time
 
 from torch.nn.functional import fold
+from metadata import get_data_dict
 from utils import build_graph, Data, split_validation
 from model import *
 from metadata import metadataObj, get_metadata_list, data_dict
@@ -34,7 +35,7 @@ opt = parser.parse_args()
 def main():
     check_if_valid(opt)
     parsed_keys = get_metadata_list(opt.keys, opt.runall, opt.runlast)
-    introduce_biksup(parameters, parsed_keys, data_dict, opt)
+    introduce_biksup(parameters, parsed_keys, data_dict, opt, get_data_dict())
     folder_name = get_foldername()
     
     with Progress(auto_refresh=False) as progress:

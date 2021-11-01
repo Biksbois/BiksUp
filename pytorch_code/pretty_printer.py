@@ -99,12 +99,19 @@ def check_if_valid(opt):
     if invalid_arguments(opt):
         print_exit_keys()
 
-def introduce_biksup(parameters, parsed_keys, data_dict, opt):
+def save_data_dict(key_dict):
+    pass
+    # for key, value in key_dict.items():
+    #     print(f" - {key} - {value}")
+    # sys.exit()
+
+def introduce_biksup(parameters, parsed_keys, data_dict, opt, key_dict):
     print_md("text/start.md")
     print_hyperparameters(parameters, opt)
     print_keys(parsed_keys)
     print_seeds(data_dict)
     introduce_start()
+    save_data_dict(key_dict)
 
 def introduce_start():
     print_md("text/execute.md")

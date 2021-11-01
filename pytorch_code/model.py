@@ -41,7 +41,7 @@ class GNN(Module):
         input_out = torch.matmul(A[:, :, A.shape[1]: 2 * A.shape[1]], self.linear_edge_out(hidden)) + self.b_oah
         inputs = torch.cat([input_in, input_out], 2)
         
-        if cur_key.test_case("GRU_weights"):
+        if cur_key.use_GRU_weights():
             gi = F.linear(inputs, self.w_ih, self.b_ih)
             gh = F.linear(hidden, self.w_hh, self.b_hh)
         else:
@@ -91,18 +91,20 @@ class SessionGraph(Module):
         ht = hidden[torch.arange(mask.shape[0]).long(), torch.sum(mask, 1) - 1]  # batch_size x latent_size
         
         # if not self.nonhybrid:
-        if not cur_key.test_case("nonhybrid"):
-            if cur_key.test_case("attention"):
+        if not cur_key.use_nonhybrid():
+            if cur_key.use_attention():
                 q1 = self.linear_one(ht).view(ht.shape[0], 1, ht.shape[1])  # batch_size x 1 x latent_size
                 q2 = self.linear_two(hidden)  # batch_size x seq_length x latent_size
                 alpha = self.linear_three(torch.sigmoid(q1 + q2))
-            else:
+                a = torch.sum(alpha * hidden * mask.view(mask.shape[0], -1, 1).float(), 1)
+            elif cur_key.use_weighted_attention():
                 # Uniform distribution
                 alpha = torch.ones(hidden.shape[0], hidden.shape[1], 1) * (1 / hidden.shape[1])
-            
-            a = torch.sum(alpha * hidden * mask.view(mask.shape[0], -1, 1).float(), 1)
+                a = torch.sum(alpha * hidden * mask.view(mask.shape[0], -1, 1).float(), 1)
+            else:
+                a = torch.sum(hidden * mask.view(mask.shape[0], -1, 1).float(), 1)
             a = self.linear_transform(torch.cat([a, ht], 1))
-        elif cur_key.test_case("local"):
+        elif cur_key.use_local():
             a = ht
         
         b = self.embedding.weight[1:]  # n_nodes x latent_size
