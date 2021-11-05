@@ -36,7 +36,7 @@ opt = parser.parse_args()
 def main():
     check_if_valid(opt)
     parsed_keys = get_metadata_list(opt.keys, opt.runall, opt.runlast)
-    introduce_biksup(parameters, parsed_keys, data_dict, opt, get_data_dict())
+    key_str = introduce_biksup(parameters, parsed_keys, data_dict, opt, get_data_dict())
     folder_name = get_foldername()
     
     with Progress(auto_refresh=False) as progress:
@@ -117,7 +117,7 @@ def main():
                 temp_folder_name = os.path.join(str(iter), folder_name)
                 save_epoch(temp_folder_name, cur_key.get_key(), [minutes, minutes], best_epoch, best_mrr, best_hit, best_loss, best_loss_list, opt.iterations)
         save_average(opt.iterations, folder_name, parsed_keys)
-        combine_files(opt.iterations, folder_name, parsed_keys, opt.dataset, AVG_FOLDER)
+        combine_files(opt.iterations, folder_name, parsed_keys, opt.dataset, AVG_FOLDER, key_str)
 
 if __name__ == '__main__':
     main()

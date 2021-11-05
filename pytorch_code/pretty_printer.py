@@ -109,9 +109,10 @@ def introduce_biksup(parameters, parsed_keys, data_dict, opt, key_dict):
     print_md("text/start.md")
     print_hyperparameters(parameters, opt)
     print_keys(parsed_keys)
-    print_seeds(data_dict)
+    key_str = print_seeds(data_dict)
     introduce_start()
     save_data_dict(key_dict)
+    return key_str
 
 def introduce_start():
     print_md("text/execute.md")
@@ -126,7 +127,7 @@ def print_keys(keys):
     introduce_keys()
     
     key_str = "[bright_yellow]\n"
-    log_str = ''
+    log_str = ""
     
     for i in range(len(keys)):
         key_str += f"Index: {str(i).rjust(3, '0')} | Key: {keys[i].get_key()}\n"
@@ -140,11 +141,14 @@ def print_seeds(data_dict):
     introduce_seeds()
     
     seed_str = "\n"
+    ret_str = ""
     
     for i in range(len(data_dict.keys())):
         seed_str += f"[bright_yellow]Index: {str(i).rjust(3, '0')} | Name: {str(list(data_dict.keys())[i]).ljust(10, ' ')} | Desc: {str(list(data_dict.values())[i])}\n"
+        ret_str += f"  - Index: {str(i).rjust(3, '0')} | Name: {str(list(data_dict.keys())[i]).ljust(18, ' ')} | Desc: {str(list(data_dict.values())[i])}\n"
     
     print(Padding(Panel(seed_str, title="All keys contains", subtitle="Let the biksing being!"), (4,4)))
+    return ret_str
 
 def left_str(input, pad=30):
     return str(input).ljust(pad)

@@ -151,10 +151,9 @@ def parse_line(head, df, index, key, dataset):
         df[head][index],
         dataset
     ]
- # python .\main.py --dataset yoochoose1_64 --keys 10110 --iterations 3
+
 def combine_one(dataframes, head, index, path, keys, dataset):
     headers = ['Key','duration','epoch',head,'data']
-    # data = [['tom', 10], ['nick', 15], ['juli', 14]]
     data = []
     
     for df, key in zip(dataframes, keys):
@@ -168,10 +167,42 @@ def get_cur_key(file, parsed_keys):
     for key in parsed_keys:
         if key.get_key() in file:
             return key.get_key()
-    print("Key did not exists") # TODO: Log this
+    log.exception(f"The filename {file} does not have a corresponding key in {[k.get_key() for k in parsed_keys]}")
     sys.exit()
 
-def combine_files(iterations, folder_name, parsed_keys, dataset, root_name):
+def parse_keys(keys):
+    key_str = ""
+    
+    for key in keys:
+        key_str += f"\n    - {key}"
+    
+    return key_str
+
+def parse_input_key(keys):
+    key_str = ""
+    
+    for key in keys:
+        key_str += f" {key}"
+    
+    return key_str
+
+def create_introduce_file(path, iterations, key_str, dataset, keys):
+    file_content = ("The experiment just ran with the following parameters:\n"
+                    f"  - Iterations: {iterations}\n"
+                    f"  - Keys: {parse_keys(keys)}\n"
+                    f"  - Dataset: {dataset}\n\n"
+                    "The keys are as follows:\n"
+                    f"{key_str}\n\n"
+                    "If you wish to run this experiment again, run the following string:\n"
+                    f"  - python main.py --iterations {iterations} --keys {parse_input_key(keys)} --dataset {dataset}")
+    
+    save_path = os.path.join(path, "info.txt")
+    
+    f = open(save_path, "w")
+    f.write(file_content)
+    f.close()
+
+def combine_files(iterations, folder_name, parsed_keys, dataset, root_name, key_str):
     path = os.path.join(root_name, folder_name)
     dataframes = []
     keys = []
@@ -183,6 +214,8 @@ def combine_files(iterations, folder_name, parsed_keys, dataset, root_name):
     
     combine_one(dataframes, 'mrr', 0, path, keys, dataset)
     combine_one(dataframes, 'hit', 1, path, keys, dataset)
+    
+    create_introduce_file(path, iterations, key_str, dataset, keys)
 
 
 if __name__ == '__main__':
