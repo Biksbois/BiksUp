@@ -103,7 +103,10 @@ class SessionGraph(Module):
                 a = torch.sum(alpha * hidden * mask.view(mask.shape[0], -1, 1).float(), 1)
             else:
                 a = torch.sum(hidden * mask.view(mask.shape[0], -1, 1).float(), 1)
-            a = self.linear_transform(torch.cat([a, ht], 1))
+            
+            if cur_key.use_local():
+                a = self.linear_transform(torch.cat([a, ht], 1))
+
         elif cur_key.use_local():
             a = ht
         

@@ -13,7 +13,7 @@ ZERO = '0'
 ONE = '1'
 BOTH = '_'
 
-ILLIGAL_KEYS = ['1_0', '0_1', '111', '_1__1']
+ILLIGAL_KEYS = ['1_0', '111', '_1__1'] #, '0_1'
 
 data_dict =  {
     'nonhybrid':'TODO: What is nonhybrid',
