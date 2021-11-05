@@ -143,11 +143,46 @@ def save_average(iter, folder_name, parsed_keys, root_path=CSV_FOLDER, save_root
             save_path = os.path.join(second_root, folder_name)
             save_std(pd_sum, save_path, p.get_key(), iter, pd_list)
 
+def parse_line(head, df, index, key, dataset):
+    return [
+        key,
+        df['duration'][index],
+        df['epoch'][index],
+        df[head][index],
+        dataset
+    ]
+ # python .\main.py --dataset yoochoose1_64 --keys 10110 --iterations 3
+def combine_one(dataframes, head, index, path, keys, dataset):
+    headers = ['Key','duration','epoch',head,'data']
+    # data = [['tom', 10], ['nick', 15], ['juli', 14]]
+    data = []
+    
+    for df, key in zip(dataframes, keys):
+        data.append(parse_line(head, df, index, key, dataset))
+    
+    save_path = os.path.join(path, head + '.csv')
+    df = pd.DataFrame(data, columns = headers)
+    df.to_csv(save_path, index=False)
+
+def get_cur_key(file, parsed_keys):
+    for key in parsed_keys:
+        if key.get_key() in file:
+            return key.get_key()
+    print("Key did not exists") # TODO: Log this
+    sys.exit()
+
 def combine_files(iterations, folder_name, parsed_keys, dataset, root_name):
     path = os.path.join(root_name, folder_name)
+    dataframes = []
+    keys = []
     
     for file in os.listdir(path):
-        pass
+        file_path = os.path.join(path, file)
+        keys.append(get_cur_key(file, parsed_keys))
+        dataframes.append(pd.read_csv(file_path))
+    
+    combine_one(dataframes, 'mrr', 0, path, keys, dataset)
+    combine_one(dataframes, 'hit', 1, path, keys, dataset)
 
 
 if __name__ == '__main__':
