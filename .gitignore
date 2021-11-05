@@ -10,6 +10,10 @@ pytorch_code/csv_files/
 pytorch_code/logfile.log
 logfile.log
 
+datasets/yoochoose1_4
+datasets/yoochoose1_64
+datasets/diginetica
+
 
 # Distribution / packaging
 .Python
