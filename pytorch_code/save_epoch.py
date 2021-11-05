@@ -1,6 +1,7 @@
 import csv
 from datetime import datetime
 import os
+from pickle import NONE
 from biksLog import get_logger
 import sys
 import pandas as pd
@@ -119,7 +120,7 @@ def save_std(pd_sum, save_path, key, iter, pd_list):
     
     save_std_csv(std_pd, save_path, key, iter)
 
-def save_average(iter, folder_name, parsed_keys, root_path=CSV_FOLDER, save_root=AVG_FOLDER, second_root=STD_FOLDER):
+def save_average(iter, folder_name, parsed_keys, root_path=CSV_FOLDER, save_root=AVG_FOLDER, second_root=STD_FOLDER, dataset=NONE):
     for p in parsed_keys:
         pd_list = []
         for i in range(int(iter)):
@@ -142,6 +143,13 @@ def save_average(iter, folder_name, parsed_keys, root_path=CSV_FOLDER, save_root
             save_path = os.path.join(second_root, folder_name)
             save_std(pd_sum, save_path, p.get_key(), iter, pd_list)
 
+def combine_files(iterations, folder_name, parsed_keys, dataset, root_name):
+    path = os.path.join(root_name, folder_name)
+    
+    for file in os.listdir(path):
+        pass
+
+
 if __name__ == '__main__':
     folder_name = get_foldername()
     csv_name = '111'
@@ -155,15 +163,4 @@ if __name__ == '__main__':
     
     save_epoch(folder_name, csv_name, duration, epoch, mrr, hit, loss, loss_evolution)
 
-if __name__ == '__main__':
-    data = {'mrr':[1,2,3],
-            'hit':[4,5,6]
-    }
-    
-    df_one = pd.DataFrame(data)
-    df_two = pd.DataFrame(data)
 
-    # print((df_one + df_two) / 2)
-    print(reduce(lambda a, b: a.add(b, fill_value=0), [df_one, df_two]))
-    
-    

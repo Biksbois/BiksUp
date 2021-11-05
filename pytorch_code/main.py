@@ -21,7 +21,8 @@ from biksLog import get_logger
 import sys
 import os
 from icecream import ic
-from save_epoch import get_foldername, save_epoch, save_average
+from global_items import AVG_FOLDER
+from save_epoch import get_foldername, save_epoch, save_average, combine_files
 from rich.progress import Progress
 
 
@@ -116,6 +117,7 @@ def main():
                 temp_folder_name = os.path.join(str(iter), folder_name)
                 save_epoch(temp_folder_name, cur_key.get_key(), [minutes, minutes], best_epoch, best_mrr, best_hit, best_loss, best_loss_list, opt.iterations)
         save_average(opt.iterations, folder_name, parsed_keys)
+        combine_files(opt.iterations, folder_name, parsed_keys, opt.dataset, AVG_FOLDER)
 
 if __name__ == '__main__':
     main()
