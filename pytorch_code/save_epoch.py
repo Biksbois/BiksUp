@@ -10,6 +10,8 @@ from functools import reduce
 from icecream import ic
 import math
 
+from metadata import parse_keylist
+
 log = get_logger()
 
 from global_items import AVG_FOLDER, CSV_FOLDER, STD_FOLDER
@@ -219,16 +221,22 @@ def combine_files(iterations, folder_name, parsed_keys, dataset, root_name, key_
 
 
 if __name__ == '__main__':
-    folder_name = get_foldername()
-    csv_name = '111'
+    parsed_keys = parse_keylist(['01110', '10110', '01010'])
+
+    # for key in keys:
+    save_average(5, '05_11_2021-14_22_26', parsed_keys)
+    combine_files(5, '05_11_2021-14_22_26', parsed_keys, 'yoochoose1_64', AVG_FOLDER, '')
+
+    # folder_name = get_foldername()
+    # csv_name = '111'
     
-    duration = [-1, -1]
-    epoch = [1,1]
-    mrr = [0,0]
-    hit = [2,2]
-    loss = [3,3]
-    loss_evolution = [[8,8,8,8], [9,9,9,9]]
+    # duration = [-1, -1]
+    # epoch = [1,1]
+    # mrr = [0,0]
+    # hit = [2,2]
+    # loss = [3,3]
+    # loss_evolution = [[8,8,8,8], [9,9,9,9]]
     
-    save_epoch(folder_name, csv_name, duration, epoch, mrr, hit, loss, loss_evolution)
+    # save_epoch(folder_name, csv_name, duration, epoch, mrr, hit, loss, loss_evolution)
 
 
