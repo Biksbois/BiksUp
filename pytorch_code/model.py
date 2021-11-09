@@ -149,7 +149,7 @@ def forward(model, i, data, cur_key):
     alias_inputs, A, items, mask, targets = data.get_slice(i)
     alias_inputs = trans_to_cuda(torch.Tensor(alias_inputs).long())
     items = trans_to_cuda(torch.Tensor(items).long())
-    A = trans_to_cuda(torch.Tensor(A).float())
+    A = trans_to_cuda(torch.Tensor(np.array(A)).float())
     mask = trans_to_cuda(torch.Tensor(mask).long())
     hidden = model(items, A, cur_key)
     get = lambda i: hidden[i][alias_inputs[i]]
