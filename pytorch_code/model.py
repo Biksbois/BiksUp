@@ -99,11 +99,17 @@ class SessionGraph(Module):
                 a = torch.sum(alpha * hidden * mask.view(mask.shape[0], -1, 1).float(), 1)
             elif cur_key.use_weighted_attention():
                 # Uniform distribution
-                alpha = np.ones((hidden.shape[0], hidden.shape[1], 1))
-                alpha = alpha.astype(np.float32)
-                alpha = torch.tensor(alpha)
-                alpha *= (1 / hidden.shape[1])
-                # alpha = torch.ones(hidden.shape[0], hidden.shape[1], 1) * (1 / hidden.shape[1])
+                # alpha = np.ones((hidden.shape[0], hidden.shape[1], 1))
+                # alpha = alpha.astype(np.float32)
+                # alpha = torch.tensor(alpha)
+                # alpha *= (1 / hidden.shape[1])
+                
+                
+                # alpha = torch.ones(hidden.shape[0], hidden.shape[1], 1) * (1 / hidden.shape[0])
+                alpha = torch.ones(hidden.shape[0], hidden.shape[1], 1) * (1 / hidden.shape[1])
+                # alpha = (1/torch.sum(mask, 1)).unsqueeze(1).expand(hidden.shape[0], hidden.shape[1]).unsqueeze(2)
+
+                
                 alpha = trans_to_cuda(alpha)
                 a = torch.sum(alpha * hidden * mask.view(mask.shape[0], -1, 1).float(), 1)
             else:
