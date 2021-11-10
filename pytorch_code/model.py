@@ -106,9 +106,11 @@ class SessionGraph(Module):
                 
                 
                 # alpha = torch.ones(hidden.shape[0], hidden.shape[1], 1) * (1 / hidden.shape[0])
-                alpha = torch.ones(hidden.shape[0], hidden.shape[1], 1) * (1 / hidden.shape[1])
+                #alpha = torch.ones(hidden.shape[0], hidden.shape[1], 1) * (1 / hidden.shape[1])
                 # alpha = (1/torch.sum(mask, 1)).unsqueeze(1).expand(hidden.shape[0], hidden.shape[1]).unsqueeze(2)
-
+                # Below is version as discuss with Peter
+                alpha = 1/torch.sum(torch.Tensor(mask),1)
+                alpha = alpha[:, None, None]
                 
                 alpha = trans_to_cuda(alpha)
                 a = torch.sum(alpha * hidden * mask.view(mask.shape[0], -1, 1).float(), 1)
