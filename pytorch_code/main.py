@@ -69,7 +69,7 @@ def main():
                 else:
                     n_node = 310
 
-                model = trans_to_cuda(SessionGraph(opt, n_node))
+                model = trans_to_cuda(SessionGraph(opt, n_node, cur_key))
 
                 start = time.time()
                 

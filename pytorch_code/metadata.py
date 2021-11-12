@@ -13,14 +13,20 @@ ZERO = '0'
 ONE = '1'
 BOTH = '_'
 
-ILLIGAL_KEYS = ['1_0', '111', '_1__1'] #, '0_1'
+ILLIGAL_KEYS = ['1_0', '111', '_1_1'] #, '0_1'  '___1_10', '___1_01', '___0_11'
 
 data_dict =  {
     'nonhybrid':'TODO: What is nonhybrid',
     'attention':'TODO: What is attention',
     'local':'TODO: What is local',
-    'GRU_weights':'TODO: What is GRU_weights',
-    'uniform_attention': 'TODO: What is uniform attention',
+    # 'GRU_weights':'Redudant key.',
+    'uniform_attention' : 'TODO: What is uniform attention',
+    'reset_GRU_weights' : 'TODO: What is reset GRU weights',
+    'update_GRU_weights' : 'TODO: What is update GRU weights',
+    'newgate_GRU_weights' : 'TODO: What is newgate GRU weights',
+    'reset_sigmoid' : 'TODO: What is reset sigmoid',
+    'input_sigmoid' : 'TODO: What is input sigmoid',
+    'newgate_tahn' : 'TODO: What is newgate tahn',
 }
 
 VALID_KEY_VALUES = [ZERO, ONE, BOTH]
@@ -230,6 +236,34 @@ class metadataObj():
     
     def use_GRU_weights(self):
         return self.test_case("GRU_weights")
+    
+    def use_reset_GRU_weights(self):
+        return self.test_case("reset_GRU_weights")
+    
+    def use_update_GRU_weights(self):
+        return self.test_case("update_GRU_weights")
+    
+    def use_newgate_GRU_weights(self):
+        return self.test_case("newgate_GRU_weights")
+    
+    def use_input_sigmoid(self):
+        return self.test_case('input_sigmoid')
+    
+    def use_reset_sigmoid(self):
+        return self.test_case('reset_sigmoid')
+
+    def use_newgate_tahn(self):
+        return self.test_case('newgate_tahn')
+    
+    def count_active_weights(self):
+        ret = 0
+        if self.use_reset_GRU_weights():
+            ret += 1
+        if self.use_update_GRU_weights():
+            ret += 1
+        if self.use_newgate_GRU_weights():
+            ret += 1
+        return ret
     
     def __eq__(self, other):
         return self.meta_dict == other.meta_dict

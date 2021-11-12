@@ -18,13 +18,15 @@ import sys
 
 
 class GNN(Module):
-    def __init__(self, hidden_size, step=1):
+    def __init__(self, hidden_size, cur_key, step=1):
         super(GNN, self).__init__()
         torch.manual_seed(0)
         self.step = step
         self.hidden_size = hidden_size
         self.input_size = hidden_size * 2
-        self.gate_size = 3 * hidden_size
+        
+        self.gate_size_mult = cur_key.count_active_weights()
+        self.gate_size = self.gate_size_mult * hidden_size
         self.w_ih = Parameter(torch.Tensor(self.gate_size, self.input_size))
         self.w_hh = Parameter(torch.Tensor(self.gate_size, self.hidden_size))
         self.b_ih = Parameter(torch.Tensor(self.gate_size))
@@ -41,19 +43,92 @@ class GNN(Module):
         input_out = torch.matmul(A[:, :, A.shape[1]: 2 * A.shape[1]], self.linear_edge_out(hidden)) + self.b_oah
         inputs = torch.cat([input_in, input_out], 2)
         
-        if cur_key.use_GRU_weights():
+        # if cur_key.use_GRU_weights():
+        #     gi = F.linear(inputs, self.w_ih, self.b_ih)
+        #     gh = F.linear(hidden, self.w_hh, self.b_hh)
+        # else:
+        #     gi = torch.matmul(inputs, torch.ones(self.input_size, self.gate_size))
+        #     gh = torch.matmul(hidden, torch.ones(self.hidden_size, self.gate_size))
+
+        if self.gate_size_mult == 3:
             gi = F.linear(inputs, self.w_ih, self.b_ih)
             gh = F.linear(hidden, self.w_hh, self.b_hh)
-        else:
+            i_r, i_i, i_n = gi.chunk(3,2)
+            h_r, h_i, h_n = gh.chunk(3,2)
+        elif self.gate_size_mult == 2:
+            gi = F.linear(inputs, self.w_ih, self.b_ih)
+            gh = F.linear(hidden, self.w_hh, self.b_hh)
+            if cur_key.use_reset_GRU_weights() and cur_key.use_update_GRU_weights():
+                i_r, i_i = gi.chunk(2,2)
+                h_r, h_i = gh.chunk(2,2)
+                
+                i_n = torch.matmul(inputs, torch.ones(self.input_size, 1 * self.hidden_size))
+                h_n = hidden # torch.matmul(hidden, torch.ones(self.hidden_size, 1 * self.hidden_size))
+            elif cur_key.use_reset_GRU_weights() and cur_key.use_newgate_GRU_weights():
+                i_r, i_n = gi.chunk(2,2)
+                h_r, h_n = gh.chunk(2,2)
+                
+                i_i = torch.matmul(inputs, torch.ones(self.input_size, 1 * self.hidden_size))
+                h_i = hidden #torch.matmul(hidden, torch.ones(self.hidden_size, 1 * self.hidden_size))
+            elif cur_key.use_newgate_GRU_weights() and cur_key.use_update_GRU_weights():
+                i_i, i_n = gi.chunk(2,2)
+                h_i, h_n = gh.chunk(2,2)
+                
+                i_r = torch.matmul(inputs, torch.ones(self.input_size, 1 * self.hidden_size))
+                h_r = hidden #torch.matmul(hidden, torch.ones(self.hidden_size, 1 * self.hidden_size))
+        elif self.gate_size_mult == 1:
             gi = torch.matmul(inputs, torch.ones(self.input_size, self.gate_size))
-            gh = torch.matmul(hidden, torch.ones(self.hidden_size, self.gate_size))
+            # gh = torch.matmul(hidden, torch.ones(self.hidden_size, self.gate_size))
+            
+            if cur_key.use_reset_GRU_weights():
+                i_r = F.linear(inputs, self.w_ih, self.b_ih)
+                h_r = F.linear(hidden, self.w_hh, self.b_hh)
+                
+                i_i = gi
+                h_i = hidden
+                
+                i_n = gi
+                h_n = hidden
+            elif cur_key.use_update_GRU_weights():
+                i_r = gi
+                h_r = hidden
+                
+                i_i = F.linear(inputs, self.w_ih, self.b_ih)
+                h_i = F.linear(hidden, self.w_hh, self.b_hh)
+                
+                i_n = gi
+                h_n = hidden
+            elif cur_key.use_newgate_GRU_weights():
+                i_r = gi
+                h_r = hidden
+                
+                i_i = gi
+                h_i = hidden
+                
+                i_n = F.linear(inputs, self.w_ih, self.b_ih)
+                h_n = F.linear(hidden, self.w_hh, self.b_hh)
+        else:
+            # gii = trans_to_cpu(torch.ones(self.input_size, self.hidden_size * 3))
+            # gi = torch.matmul(inputs, gii)
+            gi = torch.matmul(inputs, torch.ones(self.input_size, self.hidden_size * 3))
+            # gh = torch.matmul(hidden, torch.ones(self.hidden_size, self.hidden_size * 3))
+            i_r, i_i, i_n = gi.chunk(3, 2)
+            h_r, h_i, h_n = hidden, hidden, hidden #gh.chunk(3, 2)
         
-        i_r, i_i, i_n = gi.chunk(3, 2)
-        h_r, h_i, h_n = gh.chunk(3, 2)
+        if cur_key.use_reset_sigmoid():
+            resetgate = torch.sigmoid(i_r + h_r)
+        else:
+            resetgate = i_r + h_r
         
-        resetgate = torch.sigmoid(i_r + h_r)
-        inputgate = torch.sigmoid(i_i + h_i)
-        newgate = torch.tanh(i_n + resetgate * h_n)
+        if cur_key.use_input_sigmoid():
+            inputgate = torch.sigmoid(i_i + h_i)
+        else:
+            inputgate = i_i + h_i
+        
+        if cur_key.use_newgate_tahn():
+            newgate = torch.tanh(i_n + resetgate * h_n)
+        else:
+            newgate = i_n + resetgate * h_n
         
         hy = newgate + inputgate * (hidden - newgate)
         return hy
@@ -65,14 +140,14 @@ class GNN(Module):
 
 
 class SessionGraph(Module):
-    def __init__(self, opt, n_node):
+    def __init__(self, opt, n_node, cur_key):
         super(SessionGraph, self).__init__()
         self.hidden_size = opt.hiddenSize
         self.n_node = n_node
         self.batch_size = opt.batchSize
         self.nonhybrid = opt.nonhybrid
         self.embedding = nn.Embedding(self.n_node, self.hidden_size)
-        self.gnn = GNN(self.hidden_size, step=opt.step)
+        self.gnn = GNN(self.hidden_size, cur_key, step=opt.step)
         self.linear_one = nn.Linear(self.hidden_size, self.hidden_size, bias=True)
         self.linear_two = nn.Linear(self.hidden_size, self.hidden_size, bias=True)
         self.linear_three = nn.Linear(self.hidden_size, 1, bias=False)
@@ -99,11 +174,6 @@ class SessionGraph(Module):
                 a = torch.sum(alpha * hidden * mask.view(mask.shape[0], -1, 1).float(), 1)
             elif cur_key.use_weighted_attention():
                 # Uniform distribution
-                # alpha = np.ones((hidden.shape[0], hidden.shape[1], 1))
-                # alpha = alpha.astype(np.float32)
-                # alpha = torch.tensor(alpha)
-                # alpha *= (1 / hidden.shape[1])
-                
                 
                 # alpha = torch.ones(hidden.shape[0], hidden.shape[1], 1) * (1 / hidden.shape[0])
                 alpha = torch.ones(hidden.shape[0], hidden.shape[1], 1) * (1 / hidden.shape[1])
