@@ -1,0 +1,16 @@
+The experiment just ran with the following parameters:
+  - Iterations: 5
+  - Keys: 
+    - 00011
+  - Dataset: yoochoose1_64
+
+The keys are as follows:
+  - Index: 000 | Name: nonhybrid          | Desc: TODO: What is nonhybrid
+  - Index: 001 | Name: attention          | Desc: TODO: What is attention
+  - Index: 002 | Name: local              | Desc: TODO: What is local
+  - Index: 003 | Name: GRU_weights        | Desc: TODO: What is GRU_weights
+  - Index: 004 | Name: uniform_attention  | Desc: TODO: What is uniform attention
+
+
+If you wish to run this experiment again, run the following string:
+  - python main.py --iterations 5 --keys  00011 --dataset yoochoose1_64
