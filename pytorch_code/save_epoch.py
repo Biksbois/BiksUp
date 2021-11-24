@@ -9,12 +9,15 @@ from biksLog import get_logger
 from functools import reduce
 from icecream import ic
 import math
+from aggregate import avg_and_std
+
+from collections import defaultdict
 
 from metadata import parse_keylist
 
 log = get_logger()
 
-from global_items import AVG_FOLDER, CSV_FOLDER, STD_FOLDER
+from global_items import AVG_FOLDER, CSV_FOLDER, STD_FOLDER, NEW_CSV, KEY_COL_NAME
 
 log = get_logger()
 
@@ -172,37 +175,37 @@ def get_cur_key(file, parsed_keys):
     log.exception(f"The filename {file} does not have a corresponding key in {[k.get_key() for k in parsed_keys]}")
     sys.exit()
 
-def parse_keys(keys):
-    key_str = ""
+# def parse_keys(keys):
+#     key_str = ""
     
-    for key in keys:
-        key_str += f"\n    - {key}"
+#     for key in keys:
+#         key_str += f"\n    - {key}"
     
-    return key_str
+#     return key_str
 
-def parse_input_key(keys):
-    key_str = ""
+# def parse_input_key(keys):
+#     key_str = ""
     
-    for key in keys:
-        key_str += f" {key}"
+#     for key in keys:
+#         key_str += f" {key}"
     
-    return key_str
+#     return key_str
 
-def create_introduce_file(path, iterations, key_str, dataset, keys):
-    file_content = ("The experiment just ran with the following parameters:\n"
-                    f"  - Iterations: {iterations}\n"
-                    f"  - Keys: {parse_keys(keys)}\n"
-                    f"  - Dataset: {dataset}\n\n"
-                    "The keys are as follows:\n"
-                    f"{key_str}\n\n"
-                    "If you wish to run this experiment again, run the following string:\n"
-                    f"  - python main.py --iterations {iterations} --keys {parse_input_key(keys)} --dataset {dataset}")
+# def create_introduce_file(path, iterations, key_str, dataset, keys):
+#     file_content = ("The experiment just ran with the following parameters:\n"
+#                     f"  - Iterations: {iterations}\n"
+#                     f"  - Keys: {parse_keys(keys)}\n"
+#                     f"  - Dataset: {dataset}\n\n"
+#                     "The keys are as follows:\n"
+#                     f"{key_str}\n\n"
+#                     "If you wish to run this experiment again, run the following string:\n"
+#                     f"  - python main.py --iterations {iterations} --keys {parse_input_key(keys)} --dataset {dataset}")
     
-    save_path = os.path.join(path, "info.txt")
+#     save_path = os.path.join(path, "info.txt")
     
-    f = open(save_path, "w")
-    f.write(file_content)
-    f.close()
+#     f = open(save_path, "w")
+#     f.write(file_content)
+#     f.close()
 
 def combine_files(iterations, folder_name, parsed_keys, dataset, root_name, key_str):
     path = os.path.join(root_name, folder_name)
@@ -217,8 +220,43 @@ def combine_files(iterations, folder_name, parsed_keys, dataset, root_name, key_
     combine_one(dataframes, 'mrr', 0, path, keys, dataset)
     combine_one(dataframes, 'hit', 1, path, keys, dataset)
     
-    create_introduce_file(path, iterations, key_str, dataset, keys)
+    # create_introduce_file(path, iterations, key_str, dataset, keys)
 
+def save_df(col_name, key, val, save_path, csv_name):
+    key_str = f"_{key}"
+    save_path = os.path.join(save_path, csv_name + ".csv")
+    if os.path.exists(save_path):
+        df = pd.read_csv(save_path) # TODO: Read in another way
+        if key_str in df[KEY_COL_NAME].tolist():
+            key_index = df[KEY_COL_NAME].tolist().index(key_str)
+            if not col_name in df.columns:
+                df[col_name] = [-1.0] * len(df[KEY_COL_NAME])
+            df[col_name][key_index] = val
+        else:
+            if not col_name in df.columns:
+                df[col_name] = [-1.0] * len(df[KEY_COL_NAME])
+            new_row = dict((k,-1) for k in df.columns)
+            new_row[KEY_COL_NAME] = key_str
+            new_row[col_name] = float(val)
+            df = df.append(new_row, ignore_index=True)
+    else:
+        data = {
+            KEY_COL_NAME:[key_str],
+            col_name:[float(val)]
+        }
+        df = pd.DataFrame(data)
+    
+    df.to_csv(save_path, index=False) # TODO: save another way another way
+
+def save_avg_and_std(avg, std, key, dataset, foldername, score_name):
+    save_path = os.path.join(NEW_CSV, foldername)
+    create_if_not_exists(save_path)
+    save_df(dataset, key, avg, save_path, f"avg_{score_name}") # _{key}_{dataset}
+    save_df(dataset, key, std, save_path, f"std_{score_name}") # _{key}_{dataset}
+
+def save_avg_and_std_lists(lst, key, dataset, foldername, score_name):
+    avg, std = avg_and_std(lst)
+    save_avg_and_std(avg, std, key, dataset, foldername, score_name)
 
 if __name__ == '__main__':
     parsed_keys = parse_keylist(['01110', '10110', '01010'])

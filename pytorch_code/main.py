@@ -21,10 +21,12 @@ from biksLog import get_logger
 import sys
 import os
 from icecream import ic
-from global_items import AVG_FOLDER
-from save_epoch import get_foldername, save_epoch, save_average, combine_files
+from global_items import AVG_FOLDER, NEW_CSV
+from save_epoch import get_foldername, save_epoch, save_average, combine_files, save_avg_and_std, save_avg_and_std_lists
 from rich.progress import Progress
-import statistics
+from aggregate import avg_and_std #, create_introduce_file
+import pandas as pd
+
 
 
 log = get_logger()
@@ -33,15 +35,6 @@ parameters = get_parameters()
 for p in parameters:
     p.add_new_argument(parser)
 opt = parser.parse_args()
-
-def average(lst):
-    return sum(lst) / len(lst)
-
-def std(lst):
-    return statistics.stdev(lst)
-
-def avg_and_std(lst):
-    return average(lst), std(lst)
 
 def main():
     check_if_valid(opt)
@@ -55,7 +48,7 @@ def main():
             if '1_' in fnames:
                 datasets.append(fnames)
     else:
-        datasets = [opt.dataset]
+        datasets = opt.dataset
 
     for dataset in datasets:
         with Progress(auto_refresh=False) as progress:
@@ -72,6 +65,8 @@ def main():
                 time_list = []
                 epoch_count_list = []
                 epoch_time_list = []
+                outer_loss_list = []
+                outer_test_loss = []
                 
                 
                 for iter in range(int(opt.iterations)):
@@ -97,7 +92,6 @@ def main():
 
                     model = trans_to_cuda(SessionGraph(opt, n_node, cur_key))
 
-                    start = time.time()
                     
                     best_hit = [0,0]
                     best_mrr = [0,0]
@@ -107,12 +101,21 @@ def main():
                     
                     bad_counter = 0
                     
+                    epoch_loss_list = []
+                    inner_test_loss = []
+                    
                     epoch_time_list = []
                     epoch_count = 0
                     
+                    start = time.time()
+                    
                     for epoch in range(opt.epoch):
                         epoch_time_start = time.time()
-                        hit, mrr, loss_list, total_loss = train_test(model, train_data, test_data, cur_key)
+                        hit, mrr, loss_list, total_loss, test_loss = train_test(model, train_data, test_data, cur_key)
+                        epoch_loss_list.append(np.mean(loss_list))
+                        inner_test_loss.append(np.mean(test_loss))
+                        
+                        
                         flag = 0
                         if hit >= best_hit[0]:
                             best_hit[0] = hit
@@ -138,34 +141,63 @@ def main():
                         if bad_counter >= opt.patience:
                             break
                     
+                    end = time.time()
+                    
                     progress.update(progress_list[i], advance=1)
                     progress.refresh()
-                    end = time.time()
                     minutes = (end - start)/60
                     
+                    avg_test_loss, std_test_loss = avg_and_std(inner_test_loss)
+                    avg_loss, std_loss = avg_and_std(epoch_loss_list)
                     avg_val, std_val = avg_and_std(epoch_time_list)
+                    
+                    df1 = pd.DataFrame(inner_test_loss)
+                    df2 = pd.DataFrame(epoch_loss_list)
+                    df1.to_csv(f"test_{cur_key.get_key()}.csv")
+                    df2.to_csv(f"other_{cur_key.get_key()}.csv")
                     
                     hit_list.append(best_hit[0])
                     mrr_list.append(best_mrr[1])
                     time_list.append(minutes)
                     epoch_count_list.append(epoch_count)
                     epoch_time_list.append(avg_val)
+                    outer_loss_list.append(avg_loss)
+                    outer_test_loss.append(avg_test_loss)
                     
                     row_name = ""
                     col_name = ""
                     
                     print_best_results(best_hit, best_mrr, best_epoch, cur_key.get_key(), iter)
                     
-                    temp_folder_name = os.path.join(str(iter), folder_name)
-                    save_epoch(temp_folder_name, cur_key.get_key(), [minutes, minutes], best_epoch, best_mrr, best_hit, best_loss, best_loss_list, opt.iterations)
-            save_average(opt.iterations, folder_name, parsed_keys)
-            combine_files(opt.iterations, folder_name, parsed_keys, dataset, AVG_FOLDER, key_str)
+            #         temp_folder_name = os.path.join(str(iter), folder_name)
+            #         save_epoch(temp_folder_name, cur_key.get_key(), [minutes, minutes], best_epoch, best_mrr, best_hit, best_loss, best_loss_list, opt.iterations)
+            # save_average(opt.iterations, folder_name, parsed_keys)
+            # combine_files(opt.iterations, folder_name, parsed_keys, dataset, AVG_FOLDER, key_str)
             
-            hit_avg, hit_std = avg_and_std(hit_list)
-            mrr_avg, mrr_std = avg_and_std(mrr_list)
-            time_avg, time_std = avg_and_std(time_list)
-            epoch_count_avg, epoch_count_std = avg_and_std(epoch_count_list)
-            epoch_time_avg, epoch_time_std = avg_and_std(epoch_time_list)
+                # hit_avg, hit_std = avg_and_std(hit_list)
+                # save_avg_and_std(hit_avg, hit_std, cur_key.get_key(), dataset, folder_name, 'hit')
+                save_avg_and_std_lists(hit_list, cur_key.get_key(), dataset, folder_name, 'hit')
+                save_avg_and_std_lists(mrr_list, cur_key.get_key(), dataset, folder_name, 'mrr')
+                save_avg_and_std_lists(time_list, cur_key.get_key(), dataset, folder_name, 'totaltime')
+                save_avg_and_std_lists(epoch_count_list, cur_key.get_key(), dataset, folder_name, 'epochcount')
+                save_avg_and_std_lists(epoch_time_list, cur_key.get_key(), dataset, folder_name, 'epochtime')
+                save_avg_and_std_lists(outer_loss_list, cur_key.get_key(), dataset, folder_name, 'epochloss')
+                save_avg_and_std_lists(outer_test_loss, cur_key.get_key(), dataset, folder_name, 'epochtestloss')
+    
+    f = os.path.join(NEW_CSV, folder_name)
+    for file in os.listdir(f):
+        p = os.path.join(f, file)
+        df = pd.read_csv(p)
+        df = df.transpose()
+        df.to_csv(p)
+            
+            # create_introduce_file(path, iterations, key_str, dataset, keys)
+            
+            # mrr_avg, mrr_std = avg_and_std(mrr_list)
+            # time_avg, time_std = avg_and_std(time_list)
+            # epoch_count_avg, epoch_count_std = avg_and_std(epoch_count_list)
+            # epoch_time_avg, epoch_time_std = avg_and_std(epoch_time_list)
+            
 
 # data, key_one, key_two, key_three, key_four, key_five
 # yoo, 86.48, 89.59, 114.82, 93.55, 61.54

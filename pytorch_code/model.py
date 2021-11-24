@@ -250,6 +250,7 @@ def train_test(model, train_data, test_data, cur_key):
     # print('\tLoss:\t%.3f' % total_loss)
 
     # print('start predicting: ', datetime.datetime.now())
+    test_loss = []
     model.eval()
     hit, mrr = [], []
     slices = test_data.generate_batch(model.batch_size)
@@ -257,6 +258,9 @@ def train_test(model, train_data, test_data, cur_key):
         targets, scores = forward(model, i, test_data, cur_key)
         sub_scores = scores.topk(20)[1]
         sub_scores = trans_to_cpu(sub_scores).detach().numpy()
+        targets = trans_to_cuda(torch.Tensor(targets).long())
+        loss = model.loss_function(scores, targets - 1)
+        test_loss.append(loss.item())
         for score, target, mask in zip(sub_scores, targets, test_data.mask):
             hit.append(np.isin(target - 1, score))
             if len(np.where(score == target - 1)[0]) == 0:
@@ -267,4 +271,4 @@ def train_test(model, train_data, test_data, cur_key):
     hit = np.mean(hit) * 100
     mrr = np.mean(mrr) * 100
     
-    return hit, mrr, loss_list, total_loss
+    return hit, mrr, loss_list, total_loss, test_loss

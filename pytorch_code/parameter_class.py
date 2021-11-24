@@ -32,7 +32,7 @@ class parameterObj():
 def get_parameters():
     parameter_list = []
     
-    parameter_list.append(parameterObj(arg_name='--dataset', arg_default='sample', arg_type=str, arg_help='dataset name: diginetica/yoochoose1_4/yoochoose1_64/sample'))
+    parameter_list.append(parameterObj(arg_name='--dataset', arg_default=['sample'], arg_nargs='+', arg_help='dataset name: diginetica/yoochoose1_4/yoochoose1_64/sample'))
     parameter_list.append(parameterObj(arg_name='--batchSize', arg_type=int, arg_default=100, arg_help='input batch size'))
     parameter_list.append(parameterObj(arg_name='--hiddenSize', arg_type=int, arg_default=100, arg_help='hidden state size'))
     parameter_list.append(parameterObj(arg_name='--epoch', arg_type=int, arg_default=30, arg_help='the number of epochs to train for'))
