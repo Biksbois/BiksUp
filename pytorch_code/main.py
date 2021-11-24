@@ -24,6 +24,7 @@ from icecream import ic
 from global_items import AVG_FOLDER
 from save_epoch import get_foldername, save_epoch, save_average, combine_files
 from rich.progress import Progress
+import statistics
 
 
 log = get_logger()
@@ -32,6 +33,15 @@ parameters = get_parameters()
 for p in parameters:
     p.add_new_argument(parser)
 opt = parser.parse_args()
+
+def average(lst):
+    return sum(lst) / len(lst)
+
+def std(lst):
+    return statistics.stdev(lst)
+
+def avg_and_std(lst):
+    return average(lst), std(lst)
 
 def main():
     check_if_valid(opt)
@@ -46,7 +56,14 @@ def main():
             temp_process = progress.add_task(f"[cyan]Processing key {k.get_key()}", total=int(opt.iterations))
             progress_list.append(temp_process)
         
+
         for i in range(len(parsed_keys)):
+            hit_list = []
+            mrr_list = []
+            time_list = []
+            epoch_count_list = []
+            epoch_time_list = []
+            
             
             for iter in range(int(opt.iterations)):
                 cur_key = parsed_keys[i]
@@ -80,7 +97,12 @@ def main():
                 best_loss_list = [[0], [0]]
                 
                 bad_counter = 0
+                
+                epoch_time_list = []
+                epoch_count = 0
+                
                 for epoch in range(opt.epoch):
+                    epoch_time_start = time.time()
                     hit, mrr, loss_list, total_loss = train_test(model, train_data, test_data, cur_key)
                     flag = 0
                     if hit >= best_hit[0]:
@@ -98,26 +120,49 @@ def main():
                         best_loss_list[1] = loss_list
                         flag = 1
                     bad_counter += 1 - flag
+                    epoch_time_end = time.time()
+                    
+                    epoch_minute = (epoch_time_end - epoch_time_start) / 60
+                    epoch_time_list.append(epoch_minute)
+                    epoch_count += 1
+                    
                     if bad_counter >= opt.patience:
                         break
                 
-                print_best_results(best_hit, best_mrr, best_epoch, cur_key.get_key(), iter)
-                
-                # print('-------------------------------------------------------')
-                # # print('epoch: ', epoch)
-                # print('Best Result:')
-                # print('\tRecall@20:\t%.4f\tMMR@20:\t%.4f\tEpoch:\t%d'% (best_hit[0], best_mrr[0], best_epoch[0]))
-                # print('\tRecall@20:\t%.4f\tMMR@20:\t%.4f\tEpoch:\t%d'% (best_hit[1], best_mrr[1], best_epoch[1]))
-                # print('-------------------------------------------------------')
                 progress.update(progress_list[i], advance=1)
                 progress.refresh()
                 end = time.time()
-                # print("Run time: %f s" % (end - start))
                 minutes = (end - start)/60
+                
+                avg_val, std_val = avg_and_std(epoch_time_list)
+                
+                hit_list.append(best_hit[0])
+                mrr_list.append(best_mrr[1])
+                time_list.append(minutes)
+                epoch_count_list.append(epoch_count)
+                epoch_time_list.append(avg_val)
+                
+                row_name = ""
+                col_name = ""
+                
+                print_best_results(best_hit, best_mrr, best_epoch, cur_key.get_key(), iter)
+                
                 temp_folder_name = os.path.join(str(iter), folder_name)
                 save_epoch(temp_folder_name, cur_key.get_key(), [minutes, minutes], best_epoch, best_mrr, best_hit, best_loss, best_loss_list, opt.iterations)
         save_average(opt.iterations, folder_name, parsed_keys)
         combine_files(opt.iterations, folder_name, parsed_keys, opt.dataset, AVG_FOLDER, key_str)
+        
+        hit_avg, hit_std = avg_and_std(hit_list)
+        mrr_avg, mrr_std = avg_and_std(mrr_list)
+        time_avg, time_std = avg_and_std(time_list)
+        epoch_count_avg, epoch_count_std = avg_and_std(epoch_count_list)
+        epoch_time_avg, epoch_time_std = avg_and_std(epoch_time_list)
+
+# data, key_one, key_two, key_three, key_four, key_five
+# yoo, 86.48, 89.59, 114.82, 93.55, 61.54
+# yoo, 86.48, 89.59, 114.82, 93.55, 61.54
+# dic, 86.48, 89.59, 114.82, 93.55, 61.54
+
 
 if __name__ == '__main__':
     main()
