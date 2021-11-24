@@ -6,6 +6,7 @@ Created on July, 2018
 @author: Tangrizzly
 """
 
+import preprocess_helping_methods as phm
 import argparse
 import time
 import csv
@@ -16,6 +17,7 @@ import os
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--dataset', default='sample', help='dataset name: diginetica/yoochoose/sample')
+parser.add_argument('--split', default='0', help='The amount of datasets made, with a ratio depending of the given number.')
 opt = parser.parse_args()
 print(opt)
 
@@ -208,38 +210,90 @@ for seq in tra_seqs:
 for seq in tes_seqs:
     all += len(seq)
 print('avg length: ', all/(len(tra_seqs) + len(tes_seqs) * 1.0))
-if opt.dataset == 'diginetica':
-    if not os.path.exists('diginetica'):
-        os.makedirs('diginetica')
-    pickle.dump(tra, open('diginetica/train.txt', 'wb'))
-    pickle.dump(tes, open('diginetica/test.txt', 'wb'))
-    pickle.dump(tra_seqs, open('diginetica/all_train_seq.txt', 'wb'))
-elif opt.dataset == 'yoochoose':
-    if not os.path.exists('yoochoose1_4'):
-        os.makedirs('yoochoose1_4')
-    if not os.path.exists('yoochoose1_64'):
-        os.makedirs('yoochoose1_64')
-    pickle.dump(tes, open('yoochoose1_4/test.txt', 'wb'))
-    pickle.dump(tes, open('yoochoose1_64/test.txt', 'wb'))
 
-    split4, split64 = int(len(tr_seqs) / 4), int(len(tr_seqs) / 64)
-    print(len(tr_seqs[-split4:]))
-    print(len(tr_seqs[-split64:]))
+num_split = int(opt.split)
+if num_split == 0:
+    print('IN HERE')
+    if opt.dataset == 'diginetica':
+        if not os.path.exists('diginetica'):
+            os.makedirs('diginetica')
+        pickle.dump(tra, open('diginetica/train.txt', 'wb'))
+        pickle.dump(tes, open('diginetica/test.txt', 'wb'))
+        pickle.dump(tra_seqs, open('diginetica/all_train_seq.txt', 'wb'))
+    elif opt.dataset == 'yoochoose':
+        if not os.path.exists('yoochoose1_4'):
+            os.makedirs('yoochoose1_4')
+        if not os.path.exists('yoochoose1_64'):
+            os.makedirs('yoochoose1_64')
+        pickle.dump(tes, open('yoochoose1_4/test.txt', 'wb'))
+        pickle.dump(tes, open('yoochoose1_64/test.txt', 'wb'))
 
-    tra4, tra64 = (tr_seqs[-split4:], tr_labs[-split4:]), (tr_seqs[-split64:], tr_labs[-split64:])
-    seq4, seq64 = tra_seqs[tr_ids[-split4]:], tra_seqs[tr_ids[-split64]:]
 
-    pickle.dump(tra4, open('yoochoose1_4/train.txt', 'wb'))
-    pickle.dump(seq4, open('yoochoose1_4/all_train_seq.txt', 'wb'))
+        split4, split64 = int(len(tr_seqs) / 4), int(len(tr_seqs) / 64) # Ratio of split
+        print(len(tr_seqs[-split4:]))
+        print(len(tr_seqs[-split64:]))
 
-    pickle.dump(tra64, open('yoochoose1_64/train.txt', 'wb'))
-    pickle.dump(seq64, open('yoochoose1_64/all_train_seq.txt', 'wb'))
+        tra4, tra64 = (tr_seqs[-split4:], tr_labs[-split4:]), (tr_seqs[-split64:], tr_labs[-split64:])
+        seq4, seq64 = tra_seqs[tr_ids[-split4]:], tra_seqs[tr_ids[-split64]:]
 
+        pickle.dump(tra4, open('yoochoose1_4/train.txt', 'wb'))
+        pickle.dump(seq4, open('yoochoose1_4/all_train_seq.txt', 'wb'))
+
+        pickle.dump(tra64, open('yoochoose1_64/train.txt', 'wb'))
+        pickle.dump(seq64, open('yoochoose1_64/all_train_seq.txt', 'wb'))
+
+    else:
+        if not os.path.exists('sample'):
+            os.makedirs('sample')
+        pickle.dump(tra, open('sample/train.txt', 'wb'))
+        pickle.dump(tes, open('sample/test.txt', 'wb'))
+        pickle.dump(tra_seqs, open('sample/all_train_seq.txt', 'wb'))
+elif num_split > 0:
+    if opt.dataset == 'diginetica':
+        print('not implemented')
+    elif opt.dataset == 'yoochoose':
+
+        # create folders equal to the number of num_split
+        for i in range(num_split):
+            size = i+1
+            if not os.path.exists('yoochoose1_' + str(size)):
+                os.makedirs('yoochoose1_' + str(size))
+
+        # save the data into each folder
+        for i in range(num_split):
+            size = i + 1
+            split = int(len(tr_seqs) / size)
+            tra_split = (tr_seqs[-split:], tr_labs[-split:])
+            seq_split = tra_seqs[tr_ids[-split]:]
+            pickle.dump(tra_split, open('yoochoose1_' + str(size) + '/train.txt', 'wb'))
+            pickle.dump(seq_split, open('yoochoose1_' + str(size) + '/all_train_seq.txt', 'wb'))
+
+
+        # if not os.path.exists('yoochoose1_4'):
+        #     os.makedirs('yoochoose1_4')
+        # if not os.path.exists('yoochoose1_64'):
+        #     os.makedirs('yoochoose1_64')
+        # pickle.dump(tes, open('yoochoose1_4/test.txt', 'wb'))
+        # pickle.dump(tes, open('yoochoose1_64/test.txt', 'wb'))
+
+
+        # split4, split64 = int(len(tr_seqs) / 4), int(len(tr_seqs) / 64) # Ratio of split
+        # print(len(tr_seqs[-split4:]))
+        # print(len(tr_seqs[-split64:]))
+
+        # tra4, tra64 = (tr_seqs[-split4:], tr_labs[-split4:]), (tr_seqs[-split64:], tr_labs[-split64:])
+        # seq4, seq64 = tra_seqs[tr_ids[-split4]:], tra_seqs[tr_ids[-split64]:]
+
+        # pickle.dump(tra4, open('yoochoose1_4/train.txt', 'wb'))
+        # pickle.dump(seq4, open('yoochoose1_4/all_train_seq.txt', 'wb'))
+
+        # pickle.dump(tra64, open('yoochoose1_64/train.txt', 'wb'))
+        # pickle.dump(seq64, open('yoochoose1_64/all_train_seq.txt', 'wb'))
+
+    else:
+        print('Could not find dataset.')
 else:
-    if not os.path.exists('sample'):
-        os.makedirs('sample')
-    pickle.dump(tra, open('sample/train.txt', 'wb'))
-    pickle.dump(tes, open('sample/test.txt', 'wb'))
-    pickle.dump(tra_seqs, open('sample/all_train_seq.txt', 'wb'))
+    print("Can't split dataset with the given number.")
 
 print('Done.')
+
