@@ -1,0 +1,28 @@
+The experiment just ran with the following parameters:
+  - Iterations: 5
+  - Keys: 
+    - 0110000111
+    - 0110001111
+    - 0110010111
+    - 0110011111
+    - 0110100111
+    - 0110101111
+    - 0110110111
+    - 0110111111
+  - Dataset: yoochoose1_64
+
+The keys are as follows:
+  - Index: 000 | Name: nonhybrid          | Desc: TODO: What is nonhybrid
+  - Index: 001 | Name: attention          | Desc: TODO: What is attention
+  - Index: 002 | Name: local              | Desc: TODO: What is local
+  - Index: 003 | Name: uniform_attention  | Desc: TODO: What is uniform attention
+  - Index: 004 | Name: reset_GRU_weights  | Desc: TODO: What is reset GRU weights
+  - Index: 005 | Name: update_GRU_weights | Desc: TODO: What is update GRU weights
+  - Index: 006 | Name: newgate_GRU_weights | Desc: TODO: What is newgate GRU weights
+  - Index: 007 | Name: reset_sigmoid      | Desc: TODO: What is reset sigmoid
+  - Index: 008 | Name: input_sigmoid      | Desc: TODO: What is input sigmoid
+  - Index: 009 | Name: newgate_tahn       | Desc: TODO: What is newgate tahn
+
+
+If you wish to run this experiment again, run the following string:
+  - python main.py --iterations 5 --keys  0110000111 0110001111 0110010111 0110011111 0110100111 0110101111 0110110111 0110111111 --dataset yoochoose1_64

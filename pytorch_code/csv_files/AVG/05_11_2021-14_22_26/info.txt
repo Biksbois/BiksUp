@@ -1,0 +1,13 @@
+The experiment just ran with the following parameters:
+  - Iterations: 5
+  - Keys: 
+    - 01010
+    - 01110
+    - 10110
+  - Dataset: yoochoose1_64
+
+The keys are as follows:
+
+
+If you wish to run this experiment again, run the following string:
+  - python main.py --iterations 5 --keys  01010 01110 10110 --dataset yoochoose1_64
