@@ -144,8 +144,8 @@ def print_seeds(data_dict):
     ret_str = ""
     
     for i in range(len(data_dict.keys())):
-        seed_str += f"[bright_yellow]Index: {str(i).rjust(3, '0')} | Name: {str(list(data_dict.keys())[i]).ljust(10, ' ')} | Desc: {str(list(data_dict.values())[i])}\n"
-        ret_str += f"  - Index: {str(i).rjust(3, '0')} | Name: {str(list(data_dict.keys())[i]).ljust(18, ' ')} | Desc: {str(list(data_dict.values())[i])}\n"
+        seed_str += f"[bright_yellow]Index: {str(i).rjust(3, '0')} | Name: {str(list(data_dict.keys())[i]).ljust(20, ' ')} | Desc: {str(list(data_dict.values())[i])}\n"
+        ret_str += f"  - Index: {str(i).rjust(3, '0')} | Name: {str(list(data_dict.keys())[i]).ljust(20, ' ')} | Desc: {str(list(data_dict.values())[i])}\n"
     
     print(Padding(Panel(seed_str, title="All keys contains", subtitle="Let the biksing being!"), (4,4)))
     return ret_str

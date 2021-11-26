@@ -176,10 +176,10 @@ class SessionGraph(Module):
                 a = torch.sum(alpha * hidden * mask.view(mask.shape[0], -1, 1).float(), 1)
             elif cur_key.use_weighted_attention():
                 # Uniform distribution
-                
                 # alpha = torch.ones(hidden.shape[0], hidden.shape[1], 1) * (1 / hidden.shape[0])
                 #alpha = torch.ones(hidden.shape[0], hidden.shape[1], 1) * (1 / hidden.shape[1])
                 # alpha = (1/torch.sum(mask, 1)).unsqueeze(1).expand(hidden.shape[0], hidden.shape[1]).unsqueeze(2)
+                
                 # Below is version as discuss with Peter
                 alpha = 1/torch.sum(mask,1)
                 alpha = alpha[:, None, None]
@@ -233,7 +233,6 @@ def forward(model, i, data, cur_key):
 
 def train_test(model, train_data, test_data, cur_key):
     model.scheduler.step()
-    # print('start training: ', datetime.datetime.now())
     model.train()
     total_loss = 0.0
     loss_list = []
@@ -247,11 +246,6 @@ def train_test(model, train_data, test_data, cur_key):
         model.optimizer.step()
         total_loss += loss.item()
         loss_list.append(loss.item())
-    #     if j % int(len(slices) / 5 + 1) == 0:
-    #         print('[%d/%d] Loss: %.4f' % (j, len(slices), loss.item()))
-    # print('\tLoss:\t%.3f' % total_loss)
-
-    # print('start predicting: ', datetime.datetime.now())
     test_loss = []
     model.eval()
     hit, mrr = [], []

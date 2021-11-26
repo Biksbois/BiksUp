@@ -3,7 +3,7 @@
 """
 Created on July, 2018
 
-@author: Tangrizzly
+@author: The BiksBois™ ©
 """
 
 import argparse
@@ -22,9 +22,10 @@ import sys
 import os
 from icecream import ic
 from global_items import AVG_FOLDER, NEW_CSV
-from save_epoch import get_foldername, save_epoch, save_average, combine_files, save_avg_and_std, save_avg_and_std_lists
+from save_epoch import get_foldername, save_avg_and_std_lists
 from rich.progress import Progress
-from aggregate import avg_and_std #, create_introduce_file
+from aggregate import avg_and_std
+from intro_file import create_introduce_file
 import pandas as pd
 
 
@@ -163,19 +164,9 @@ def main():
                     epoch_time_list.append(avg_val)
                     outer_loss_list.append(avg_loss)
                     outer_test_loss.append(avg_test_loss)
-                    
-                    row_name = ""
-                    col_name = ""
-                    
+
                     print_best_results(best_hit, best_mrr, best_epoch, cur_key.get_key(), iter)
-                    
-            #         temp_folder_name = os.path.join(str(iter), folder_name)
-            #         save_epoch(temp_folder_name, cur_key.get_key(), [minutes, minutes], best_epoch, best_mrr, best_hit, best_loss, best_loss_list, opt.iterations)
-            # save_average(opt.iterations, folder_name, parsed_keys)
-            # combine_files(opt.iterations, folder_name, parsed_keys, dataset, AVG_FOLDER, key_str)
-            
-                # hit_avg, hit_std = avg_and_std(hit_list)
-                # save_avg_and_std(hit_avg, hit_std, cur_key.get_key(), dataset, folder_name, 'hit')
+
                 save_avg_and_std_lists(hit_list, cur_key.get_key(), dataset, folder_name, 'hit')
                 save_avg_and_std_lists(mrr_list, cur_key.get_key(), dataset, folder_name, 'mrr')
                 save_avg_and_std_lists(time_list, cur_key.get_key(), dataset, folder_name, 'totaltime')
@@ -190,20 +181,7 @@ def main():
         df = pd.read_csv(p)
         df = df.transpose()
         df.to_csv(p)
-            
-            # create_introduce_file(path, iterations, key_str, dataset, keys)
-            
-            # mrr_avg, mrr_std = avg_and_std(mrr_list)
-            # time_avg, time_std = avg_and_std(time_list)
-            # epoch_count_avg, epoch_count_std = avg_and_std(epoch_count_list)
-            # epoch_time_avg, epoch_time_std = avg_and_std(epoch_time_list)
-            
-
-# data, key_one, key_two, key_three, key_four, key_five
-# yoo, 86.48, 89.59, 114.82, 93.55, 61.54
-# yoo, 86.48, 89.59, 114.82, 93.55, 61.54
-# dic, 86.48, 89.59, 114.82, 93.55, 61.54
-
+    create_introduce_file(opt.iterations, folder_name, parsed_keys, dataset, NEW_CSV, key_str)
 
 if __name__ == '__main__':
     main()

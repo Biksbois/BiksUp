@@ -1,8 +1,5 @@
 
 import copy
-from icecream import ic
-from numpy import fabs
-from unittest2 import util
 from global_items import LAST_TXT, TRUE_LIST
 from biksLog import get_logger
 import sys
@@ -13,20 +10,19 @@ ZERO = '0'
 ONE = '1'
 BOTH = '_'
 
-ILLIGAL_KEYS = ['1_0', '111', '_1_1'] #, '0_1'  '___1_10', '___1_01', '___0_11'
+ILLIGAL_KEYS = ['1_0', '111', '_1_1']
 
 data_dict =  {
-    'nonhybrid':'TODO: What is nonhybrid',
-    'attention':'TODO: What is attention',
-    'local':'TODO: What is local',
-    # 'GRU_weights':'Redudant key.',
-    'uniform_attention' : 'TODO: What is uniform attention',
-    'reset_GRU_weights' : 'TODO: What is reset GRU weights',
-    'update_GRU_weights' : 'TODO: What is update GRU weights',
-    'newgate_GRU_weights' : 'TODO: What is newgate GRU weights',
-    'reset_sigmoid' : 'TODO: What is reset sigmoid',
-    'input_sigmoid' : 'TODO: What is input sigmoid',
-    'newgate_tahn' : 'TODO: What is newgate tahn',
+    'nonhybrid':'A combination between local and global embedding is utilized',
+    'attention':'Is attention utilized',
+    'local':'Only local embedding is utilized',
+    'uniform_attention' : 'The attention is uniformly distributed between all items in a session',
+    'reset_GRU_weights' : 'Is the GRU weights and bias is utilised when updating the reset gate',
+    'update_GRU_weights' : 'Is the GRU weights and bias is utilised when updating the update gate',
+    'newgate_GRU_weights' : 'Is the GRU weights and bias is utilised when updating the new gate',
+    'reset_sigmoid' : 'Is the sigmoid activation function is utilized when calculating the reset gate',
+    'input_sigmoid' : 'Is the sigmoid activation function is utilized when calculating the input gate',
+    'newgate_tahn' : 'Is the tahn activation function is utilized when calculating the new gate',
 }
 
 VALID_KEY_VALUES = [ZERO, ONE, BOTH]
@@ -71,7 +67,6 @@ def parse_keylist(key_list, is_runlast=False, do_log=True):
     
     for key in key_list:
         if is_valid_key(key, key_count, do_log=do_log):
-            # if not contains_illigal_key(key):
             key_mutations.extend(get_key_mutations(key))
         else:
             sys.exit()
