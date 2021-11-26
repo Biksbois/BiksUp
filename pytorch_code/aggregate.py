@@ -1,4 +1,7 @@
 import statistics
+import os
+from global_items import NEW_CSV
+import pandas as pd
 
 def average(lst):
     if len(lst) == 1:
@@ -22,6 +25,14 @@ def std(lst):
 
 def avg_and_std(lst):
     return average(lst), std(lst)
+
+def transpose_files(folder_name):
+    f = os.path.join(NEW_CSV, folder_name)
+    for file in os.listdir(f):
+        p = os.path.join(f, file)
+        df = pd.read_csv(p)
+        df = df.transpose()
+        df.to_csv(p)
 
 if __name__ == '__main__':
     lst = [1,2,3]

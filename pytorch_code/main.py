@@ -24,7 +24,7 @@ from icecream import ic
 from global_items import AVG_FOLDER, NEW_CSV
 from save_epoch import get_foldername, save_avg_and_std_lists
 from rich.progress import Progress
-from aggregate import avg_and_std
+from aggregate import avg_and_std, transpose_files
 from intro_file import create_introduce_file
 import pandas as pd
 
@@ -148,9 +148,9 @@ def main():
                     progress.refresh()
                     minutes = (end - start)/60
                     
-                    avg_test_loss, std_test_loss = avg_and_std(inner_test_loss)
-                    avg_loss, std_loss = avg_and_std(epoch_loss_list)
-                    avg_val, std_val = avg_and_std(epoch_time_list)
+                    avg_test_loss, _ = avg_and_std(inner_test_loss)
+                    avg_loss, _ = avg_and_std(epoch_loss_list)
+                    avg_val, _ = avg_and_std(epoch_time_list)
                     
                     df1 = pd.DataFrame(inner_test_loss)
                     df2 = pd.DataFrame(epoch_loss_list)
@@ -164,7 +164,6 @@ def main():
                     epoch_time_list.append(avg_val)
                     outer_loss_list.append(avg_loss)
                     outer_test_loss.append(avg_test_loss)
-
                     print_best_results(best_hit, best_mrr, best_epoch, cur_key.get_key(), iter)
 
                 save_avg_and_std_lists(hit_list, cur_key.get_key(), dataset, folder_name, 'hit')
@@ -175,12 +174,7 @@ def main():
                 save_avg_and_std_lists(outer_loss_list, cur_key.get_key(), dataset, folder_name, 'epochloss')
                 save_avg_and_std_lists(outer_test_loss, cur_key.get_key(), dataset, folder_name, 'epochtestloss')
     
-    f = os.path.join(NEW_CSV, folder_name)
-    for file in os.listdir(f):
-        p = os.path.join(f, file)
-        df = pd.read_csv(p)
-        df = df.transpose()
-        df.to_csv(p)
+    transpose_files(folder_name)
     create_introduce_file(opt.iterations, folder_name, parsed_keys, dataset, NEW_CSV, key_str)
 
 if __name__ == '__main__':
