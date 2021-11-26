@@ -108,7 +108,12 @@ class GNN(Module):
                 i_n = F.linear(inputs, self.w_ih, self.b_ih)
                 h_n = F.linear(hidden, self.w_hh, self.b_hh)
         else:
-            gi = torch.matmul(inputs, torch.ones(self.input_size, self.hidden_size * 3))
+            # gii = trans_to_cpu(torch.ones(self.input_size, self.hidden_size * 3))
+            # gi = torch.matmul(inputs, gii)
+            ones = torch.ones(self.input_size, self.hidden_size * 3)
+            ones = trans_to_cuda(ones)
+            gi = torch.matmul(inputs, ones)
+            # gh = torch.matmul(hidden, torch.ones(self.hidden_size, self.hidden_size * 3))
             i_r, i_i, i_n = gi.chunk(3, 2)
             h_r, h_i, h_n = hidden, hidden, hidden #gh.chunk(3, 2)
         
@@ -249,10 +254,11 @@ def train_test(model, train_data, test_data, cur_key):
         targets, scores = forward(model, i, test_data, cur_key)
         sub_scores = scores.topk(20)[1]
         sub_scores = trans_to_cpu(sub_scores).detach().numpy()
+        targets_cpu = targets
         targets = trans_to_cuda(torch.Tensor(targets).long())
         loss = model.loss_function(scores, targets - 1)
         test_loss.append(loss.item())
-        for score, target, mask in zip(sub_scores, targets, test_data.mask):
+        for score, target, mask in zip(sub_scores, targets_cpu, test_data.mask):
             hit.append(np.isin(target - 1, score))
             if len(np.where(score == target - 1)[0]) == 0:
                 mrr.append(0)
