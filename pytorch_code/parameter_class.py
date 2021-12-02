@@ -49,6 +49,7 @@ def get_parameters():
     parameter_list.append(parameterObj(arg_name='--runall', arg_type=bool, arg_default=False, arg_help="Run all permutations of key combinations"))
     parameter_list.append(parameterObj(arg_name='--runlast', arg_type=bool, arg_default=False, arg_help="Run the last executed variation of the --keys argument"))
     parameter_list.append(parameterObj(arg_name='--iterations', arg_type=int, arg_default=1, arg_help="How many times the experiments should run"))
+    parameter_list.append(parameterObj(arg_name='--big_o', arg_type=bool, arg_default=False, arg_help="Find the complexity with one key and one dataset"))
     parameter_list.append(parameterObj(arg_name='--exp_graph', arg_type=bool, arg_default=False, arg_help="Run the exponential graph experiment, Default='False'"))
 
     return parameter_list
