@@ -28,6 +28,7 @@ from aggregate import avg_and_std, transpose_files
 from intro_file import create_introduce_file
 import big_o
 from train_method import train_model, save_all_data, load_dataset
+import pandas as pd
 
 
 def ensure_valid_big_o_config(log, parsed_keys, opt):
@@ -123,6 +124,11 @@ def main(opt):
                     avg_test_loss, _ = avg_and_std(inner_test_loss)
                     avg_loss, _ = avg_and_std(epoch_loss_list)
                     avg_val, _ = avg_and_std(epoch_time_list)
+                    
+                    df1 = pd.DataFrame(inner_test_loss)
+                    df2 = pd.DataFrame(epoch_loss_list)
+                    df1.to_csv(f"loss_files/test_{cur_key.get_key()}.csv")
+                    df2.to_csv(f"loss_files/other_{cur_key.get_key()}.csv")
                     
                     hit_list.append(best_hit[0])
                     mrr_list.append(best_mrr[1])
