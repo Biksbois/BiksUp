@@ -61,23 +61,28 @@ class GNN(Module):
             if cur_key.use_reset_GRU_weights() and cur_key.use_update_GRU_weights():
                 i_r, i_i = gi.chunk(2,2)
                 h_r, h_i = gh.chunk(2,2)
-                
-                i_n = torch.matmul(inputs, torch.ones(self.input_size, 1 * self.hidden_size))
+                ones = torch.ones(self.input_size, 1 * self.hidden_size)
+                ones = trans_to_cuda(ones)
+                i_n = torch.matmul(inputs, ones)
                 h_n = hidden # torch.matmul(hidden, torch.ones(self.hidden_size, 1 * self.hidden_size))
             elif cur_key.use_reset_GRU_weights() and cur_key.use_newgate_GRU_weights():
                 i_r, i_n = gi.chunk(2,2)
                 h_r, h_n = gh.chunk(2,2)
-                
-                i_i = torch.matmul(inputs, torch.ones(self.input_size, 1 * self.hidden_size))
+                ones = torch.ones(self.input_size, 1 * self.hidden_size)
+                ones = trans_to_cuda(ones)
+                i_i = torch.matmul(inputs, ones)
                 h_i = hidden #torch.matmul(hidden, torch.ones(self.hidden_size, 1 * self.hidden_size))
             elif cur_key.use_newgate_GRU_weights() and cur_key.use_update_GRU_weights():
                 i_i, i_n = gi.chunk(2,2)
                 h_i, h_n = gh.chunk(2,2)
-                
-                i_r = torch.matmul(inputs, torch.ones(self.input_size, 1 * self.hidden_size))
+                ones = torch.ones(self.input_size, 1 * self.hidden_size)
+                ones = trans_to_cuda(ones)
+                i_r = torch.matmul(inputs, ones)
                 h_r = hidden #torch.matmul(hidden, torch.ones(self.hidden_size, 1 * self.hidden_size))
         elif self.gate_size_mult == 1:
-            gi = torch.matmul(inputs, torch.ones(self.input_size, self.gate_size))
+            ones = torch.ones(self.input_size, self.gate_size)
+            ones = trans_to_cuda(ones)
+            gi = torch.matmul(inputs, ones)
             # gh = torch.matmul(hidden, torch.ones(self.hidden_size, self.gate_size))
             
             if cur_key.use_reset_GRU_weights():
