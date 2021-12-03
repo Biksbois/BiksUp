@@ -19,7 +19,6 @@ log = get_logger()
 
 from global_items import AVG_FOLDER, CSV_FOLDER, STD_FOLDER, NEW_CSV, KEY_COL_NAME
 
-
 def get_foldername():
     now = datetime.now()
     return now.strftime("%d_%m_%Y-%H_%M_%S")
@@ -74,8 +73,8 @@ def save_df(col_name, key, val, save_path, csv_name):
 def save_avg_and_std(avg, std, key, dataset, foldername, score_name):
     save_path = os.path.join(NEW_CSV, foldername)
     create_if_not_exists(save_path)
-    save_df(dataset, key, avg, save_path, f"avg_{score_name}") # _{key}_{dataset}
-    save_df(dataset, key, std, save_path, f"std_{score_name}") # _{key}_{dataset}
+    save_df(dataset, key, avg, save_path, f"avg_{score_name}")
+    save_df(dataset, key, std, save_path, f"std_{score_name}")
 
 def save_avg_and_std_lists(lst, key, dataset, foldername, score_name):
     avg, std = avg_and_std(lst)

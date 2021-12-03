@@ -9,37 +9,70 @@ Created on July, 2018
 import argparse
 import pickle
 import time
-
 from torch.nn.functional import fold
 from metadata import get_data_dict
+from global_items import TRUE_LIST
 from utils import build_graph, Data, split_validation
 from model import *
 from metadata import metadataObj, get_metadata_list, data_dict
-from pretty_printer import print_hyperparameters, introduce_biksup, check_if_valid, print_best_results
-from parameter_class import parameterObj, get_parameters
+from pretty_printer import introduce_biksup, check_if_valid, print_best_results
+from parameter_class import get_parameters
 from biksLog import get_logger
 import sys
 import os
 from icecream import ic
-from global_items import AVG_FOLDER, NEW_CSV
-from save_epoch import get_foldername, save_avg_and_std_lists
+from global_items import NEW_CSV
+from save_epoch import get_foldername
 from rich.progress import Progress
 from aggregate import avg_and_std, transpose_files
 from intro_file import create_introduce_file
-import pandas as pd
+import big_o
+from train_method import train_model, save_all_data, load_dataset
 
 
+def ensure_valid_big_o_config(log, parsed_keys, opt):
+    if len(parsed_keys) != 1:
+        log.exception("You can only have one key when running big_o")
+        sys.exit()
+    if len(opt.dataset) != 1:
+        log.exception("You can only have one dataset when running big_o")
+        sys.exit()
+    if opt.iterations != 1:
+        log.warning("--iterations parameter is obselete when running big_o. The input has been ignored.")
 
-log = get_logger()
-parser = argparse.ArgumentParser()
-parameters = get_parameters()
-for p in parameters:
-    p.add_new_argument(parser)
-opt = parser.parse_args()
+def big_o_run(dataset):
+    train_data = dataset[0]
+    test_data = dataset[1]
+    
+    train_data = Data(train_data, shuffle=True)
+    test_data = Data(test_data, shuffle=False)
+    
+    n_node = 310 #TODO: HERE
+    cur_key = metadataObj('0110')
+    model = trans_to_cuda(SessionGraph(opt, n_node, cur_key))
+    _, _, _, _, _, _, _, _, _ = train_model(model, train_data, test_data, cur_key, opt)
 
-def main():
+def get_n_sessions(n):
+    train_data = pickle.load(open('../datasets/' + "sample" + '/train.txt', 'rb')) #TODO: HERE
+    test_data = pickle.load(open('../datasets/' + "sample" + '/test.txt', 'rb')) #TODO: HERE
+    
+    train_data = (train_data[0][:n], train_data[1][:n])
+    test_n = math.ceil(n*0.3)
+    test_data = (test_data[0][:test_n], test_data[1][:test_n])
+    
+    print(f"Train: {len(train_data[0])} - Test: {len(test_data[0])}")
+    
+    return train_data, test_data
+
+def big_o_main():
+    best, others = big_o.big_o(big_o_run, get_n_sessions, n_repeats=2, min_n=1, max_n=1200) #TODO: HERE
+    log.debug(best)
+    # log.debug(others)
+
+def main(opt):
     check_if_valid(opt)
     parsed_keys = get_metadata_list(opt.keys, opt.runall, opt.runlast)
+    
     key_str = introduce_biksup(parameters, parsed_keys, data_dict, opt, get_data_dict())
     folder_name = get_foldername()
 
@@ -72,75 +105,14 @@ def main():
                 
                 for iter in range(int(opt.iterations)):
                     cur_key = parsed_keys[i]
-                
-                    train_data = pickle.load(open('../datasets/' + dataset + '/train.txt', 'rb'))
-                    if opt.validation:
-                        train_data, valid_data = split_validation(train_data, opt.valid_portion)
-                        test_data = valid_data
-                    else:
-                        test_data = pickle.load(open('../datasets/' + dataset + '/test.txt', 'rb'))
-                    # all_train_seq = pickle.load(open('../datasets/' + opt.dataset + '/all_train_seq.txt', 'rb'))
-                    # g = build_graph(all_train_seq)
-                    train_data = Data(train_data, shuffle=True)
-                    test_data = Data(test_data, shuffle=False)
-                    # del all_train_seq, g
-                    if dataset == 'diginetica':
-                        n_node = 43098
-                    elif 'yoochoose' in dataset:
-                        n_node = 37484
-                    else:
-                        n_node = 310
+
+                    n_node, train_data, _, test_data = load_dataset(opt, dataset)
 
                     model = trans_to_cuda(SessionGraph(opt, n_node, cur_key))
 
-                    
-                    best_hit = [0,0]
-                    best_mrr = [0,0]
-                    best_epoch = [0, 0]
-                    best_loss = [0,0]
-                    best_loss_list = [[0], [0]]
-                    
-                    bad_counter = 0
-                    
-                    epoch_loss_list = []
-                    inner_test_loss = []
-                    
-                    epoch_time_list = []
-                    epoch_count = 0
-                    
                     start = time.time()
                     
-                    for epoch in range(opt.epoch):
-                        epoch_time_start = time.time()
-                        hit, mrr, loss_list, total_loss, test_loss = train_test(model, train_data, test_data, cur_key)
-                        epoch_loss_list.append(np.mean(loss_list))
-                        inner_test_loss.append(np.mean(test_loss))
-                        
-                        
-                        flag = 0
-                        if hit >= best_hit[0]:
-                            best_hit[0] = hit
-                            best_epoch[0] = epoch
-                            best_mrr[0] = mrr
-                            best_loss[0] = total_loss
-                            best_loss_list[0] = loss_list
-                            flag = 1
-                        if mrr >= best_mrr[1]:
-                            best_mrr[1] = mrr
-                            best_hit[1] = hit
-                            best_epoch[1] = epoch
-                            best_loss[1] = total_loss
-                            best_loss_list[1] = loss_list
-                            flag = 1
-                        bad_counter += 1 - flag
-                        epoch_time_end = time.time()
-                        
-                        epoch_minute = (epoch_time_end - epoch_time_start) / 60
-                        epoch_time_list.append(epoch_minute)
-                        epoch_count += 1
-                        
-                        if bad_counter >= opt.patience:
-                            break
+                    best_hit, best_mrr, best_epoch, _, _, epoch_loss_list, inner_test_loss, epoch_time_list, epoch_count = train_model(model, train_data, test_data, cur_key, opt)
                     
                     end = time.time()
                     
@@ -152,11 +124,6 @@ def main():
                     avg_loss, _ = avg_and_std(epoch_loss_list)
                     avg_val, _ = avg_and_std(epoch_time_list)
                     
-                    df1 = pd.DataFrame(inner_test_loss)
-                    df2 = pd.DataFrame(epoch_loss_list)
-                    df1.to_csv(f"test_{cur_key.get_key()}.csv")
-                    df2.to_csv(f"other_{cur_key.get_key()}.csv")
-                    
                     hit_list.append(best_hit[0])
                     mrr_list.append(best_mrr[1])
                     time_list.append(minutes)
@@ -164,18 +131,35 @@ def main():
                     epoch_time_list.append(avg_val)
                     outer_loss_list.append(avg_loss)
                     outer_test_loss.append(avg_test_loss)
+                    
                     print_best_results(best_hit, best_mrr, best_epoch, cur_key.get_key(), iter)
-
-                save_avg_and_std_lists(hit_list, cur_key.get_key(), dataset, folder_name, 'hit')
-                save_avg_and_std_lists(mrr_list, cur_key.get_key(), dataset, folder_name, 'mrr')
-                save_avg_and_std_lists(time_list, cur_key.get_key(), dataset, folder_name, 'totaltime')
-                save_avg_and_std_lists(epoch_count_list, cur_key.get_key(), dataset, folder_name, 'epochcount')
-                save_avg_and_std_lists(epoch_time_list, cur_key.get_key(), dataset, folder_name, 'epochtime')
-                save_avg_and_std_lists(outer_loss_list, cur_key.get_key(), dataset, folder_name, 'epochloss')
-                save_avg_and_std_lists(outer_test_loss, cur_key.get_key(), dataset, folder_name, 'epochtestloss')
-    
+                
+                save_all_data(dataset, folder_name, cur_key, 
+                            hit=hit_list, 
+                            mrr=mrr_list, 
+                            totaltime=time_list,
+                            epochcount=epoch_count_list, 
+                            epochtime=epoch_time_list, 
+                            epochloss=outer_loss_list, 
+                            epochtestloss=outer_test_loss
+                )
     transpose_files(folder_name)
     create_introduce_file(opt.iterations, folder_name, parsed_keys, dataset, NEW_CSV, key_str)
 
 if __name__ == '__main__':
-    main()
+    log = get_logger()
+    parser = argparse.ArgumentParser()
+    parameters = get_parameters()
+    
+    for p in parameters:
+        p.add_new_argument(parser)
+    
+    opt = parser.parse_args()
+    
+    if opt.big_o in TRUE_LIST:
+        parsed_keys = get_metadata_list(opt.keys, opt.runall, opt.runlast)
+        ensure_valid_big_o_config(log, parsed_keys, opt)
+        best, others = big_o_main()
+    else:
+        main(opt)
+    

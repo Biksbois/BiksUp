@@ -51,6 +51,8 @@ def get_default(opt, p):
         return opt.runlast
     elif p.arg_name == '--iterations':
         return opt.iterations
+    elif p.arg_name == '--big_o':
+        return opt.big_o
     else:
         log.exception(f"The parameter {p.arg_name} has not been implemented correctly when getting default parameters.")
         return p.arg_default
