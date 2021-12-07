@@ -23,6 +23,7 @@ data_dict =  {
     'reset_sigmoid' : 'Is the sigmoid activation function is utilized when calculating the reset gate',
     'input_sigmoid' : 'Is the sigmoid activation function is utilized when calculating the input gate',
     'newgate_tahn' : 'Is the tahn activation function is utilized when calculating the new gate',
+    'use_GRU' : 'Is the GRU is utilized',
 }
 
 VALID_KEY_VALUES = [ZERO, ONE, BOTH]
@@ -228,6 +229,9 @@ class metadataObj():
     
     def use_local(self):
         return self.test_case("local")
+
+    def use_GRU(self):
+        return self.test_case("use_GRU")
     
     def use_GRU_weights(self):
         return self.test_case("GRU_weights")

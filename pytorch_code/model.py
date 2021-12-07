@@ -42,6 +42,12 @@ class GNN(Module):
         input_in = torch.matmul(A[:, :, :A.shape[1]], self.linear_edge_in(hidden)) + self.b_iah
         input_out = torch.matmul(A[:, :, A.shape[1]: 2 * A.shape[1]], self.linear_edge_out(hidden)) + self.b_oah
         inputs = torch.cat([input_in, input_out], 2)
+        
+        if not cur_key.use_GRU():
+            inputs = torch.nn.Linear(self.hidden_size*2, self.hidden_size, bias=True)(inputs)
+            inputs = torch.nn.ReLU(inputs)
+            return inputs 
+
 
         if self.gate_size_mult == 3:
             gi = F.linear(inputs, self.w_ih, self.b_ih)
