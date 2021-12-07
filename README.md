@@ -2,6 +2,7 @@
 
 BiksUP is an ablation study conducted on the SR-GNN model in order to find a superior mode, with scalability in focus.
 
+The work has been conducted by a group of 7th semester students at Aalborg University.
 
 ## Paper data and code
 
