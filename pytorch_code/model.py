@@ -42,13 +42,6 @@ class GNN(Module):
         input_in = torch.matmul(A[:, :, :A.shape[1]], self.linear_edge_in(hidden)) + self.b_iah
         input_out = torch.matmul(A[:, :, A.shape[1]: 2 * A.shape[1]], self.linear_edge_out(hidden)) + self.b_oah
         inputs = torch.cat([input_in, input_out], 2)
-        
-        # if cur_key.use_GRU_weights():
-        #     gi = F.linear(inputs, self.w_ih, self.b_ih)
-        #     gh = F.linear(hidden, self.w_hh, self.b_hh)
-        # else:
-        #     gi = torch.matmul(inputs, torch.ones(self.input_size, self.gate_size))
-        #     gh = torch.matmul(hidden, torch.ones(self.hidden_size, self.gate_size))
 
         if self.gate_size_mult == 3:
             gi = F.linear(inputs, self.w_ih, self.b_ih)
@@ -64,26 +57,25 @@ class GNN(Module):
                 ones = torch.ones(self.input_size, 1 * self.hidden_size)
                 ones = trans_to_cuda(ones)
                 i_n = torch.matmul(inputs, ones)
-                h_n = hidden # torch.matmul(hidden, torch.ones(self.hidden_size, 1 * self.hidden_size))
+                h_n = hidden
             elif cur_key.use_reset_GRU_weights() and cur_key.use_newgate_GRU_weights():
                 i_r, i_n = gi.chunk(2,2)
                 h_r, h_n = gh.chunk(2,2)
                 ones = torch.ones(self.input_size, 1 * self.hidden_size)
                 ones = trans_to_cuda(ones)
                 i_i = torch.matmul(inputs, ones)
-                h_i = hidden #torch.matmul(hidden, torch.ones(self.hidden_size, 1 * self.hidden_size))
+                h_i = hidden
             elif cur_key.use_newgate_GRU_weights() and cur_key.use_update_GRU_weights():
                 i_i, i_n = gi.chunk(2,2)
                 h_i, h_n = gh.chunk(2,2)
                 ones = torch.ones(self.input_size, 1 * self.hidden_size)
                 ones = trans_to_cuda(ones)
                 i_r = torch.matmul(inputs, ones)
-                h_r = hidden #torch.matmul(hidden, torch.ones(self.hidden_size, 1 * self.hidden_size))
+                h_r = hidden
         elif self.gate_size_mult == 1:
             ones = torch.ones(self.input_size, self.gate_size)
             ones = trans_to_cuda(ones)
             gi = torch.matmul(inputs, ones)
-            # gh = torch.matmul(hidden, torch.ones(self.hidden_size, self.gate_size))
             
             if cur_key.use_reset_GRU_weights():
                 i_r = F.linear(inputs, self.w_ih, self.b_ih)
@@ -113,14 +105,11 @@ class GNN(Module):
                 i_n = F.linear(inputs, self.w_ih, self.b_ih)
                 h_n = F.linear(hidden, self.w_hh, self.b_hh)
         else:
-            # gii = trans_to_cpu(torch.ones(self.input_size, self.hidden_size * 3))
-            # gi = torch.matmul(inputs, gii)
             ones = torch.ones(self.input_size, self.hidden_size * 3)
             ones = trans_to_cuda(ones)
             gi = torch.matmul(inputs, ones)
-            # gh = torch.matmul(hidden, torch.ones(self.hidden_size, self.hidden_size * 3))
             i_r, i_i, i_n = gi.chunk(3, 2)
-            h_r, h_i, h_n = hidden, hidden, hidden #gh.chunk(3, 2)
+            h_r, h_i, h_n = hidden, hidden, hidden
         
         if cur_key.use_reset_sigmoid():
             resetgate = torch.sigmoid(i_r + h_r)
@@ -171,8 +160,7 @@ class SessionGraph(Module):
 
     def compute_scores(self, hidden, mask, cur_key):
         ht = hidden[torch.arange(mask.shape[0]).long(), torch.sum(mask, 1) - 1]  # batch_size x latent_size
-        
-        # if not self.nonhybrid:
+
         if not cur_key.use_nonhybrid():
             if cur_key.use_attention():
                 q1 = self.linear_one(ht).view(ht.shape[0], 1, ht.shape[1])  # batch_size x 1 x latent_size
@@ -180,12 +168,6 @@ class SessionGraph(Module):
                 alpha = self.linear_three(torch.sigmoid(q1 + q2))
                 a = torch.sum(alpha * hidden * mask.view(mask.shape[0], -1, 1).float(), 1)
             elif cur_key.use_weighted_attention():
-                # Uniform distribution
-                # alpha = torch.ones(hidden.shape[0], hidden.shape[1], 1) * (1 / hidden.shape[0])
-                #alpha = torch.ones(hidden.shape[0], hidden.shape[1], 1) * (1 / hidden.shape[1])
-                # alpha = (1/torch.sum(mask, 1)).unsqueeze(1).expand(hidden.shape[0], hidden.shape[1]).unsqueeze(2)
-                
-                # Below is version as discuss with Peter
                 alpha = 1/torch.sum(mask,1)
                 alpha = alpha[:, None, None]
                 
@@ -200,7 +182,7 @@ class SessionGraph(Module):
         elif cur_key.use_local():
             a = ht
         
-        b = self.embedding.weight[1:]  # n_nodes x latent_size
+        b = self.embedding.weight[1:]
         scores = torch.matmul(a, b.transpose(1, 0))
         return scores
 
