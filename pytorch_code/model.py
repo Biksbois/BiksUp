@@ -33,108 +33,109 @@ class GNN(Module):
         self.b_hh = Parameter(torch.Tensor(self.gate_size))
         self.b_iah = Parameter(torch.Tensor(self.hidden_size))
         self.b_oah = Parameter(torch.Tensor(self.hidden_size))
-
-        self.linear_noGRU = nn.Linear(self.hidden_size*2, self.hidden_size, bias=True)
+        # remember to change self.hidden_size*3 to self.hidden_size*2
+        self.linear_noGRU = nn.Linear(self.hidden_size, self.hidden_size, bias=True)
 
         self.linear_edge_in = nn.Linear(self.hidden_size, self.hidden_size, bias=True)
         self.linear_edge_out = nn.Linear(self.hidden_size, self.hidden_size, bias=True)
         self.linear_edge_f = nn.Linear(self.hidden_size, self.hidden_size, bias=True)
 
     def GNNCell(self, A, hidden, cur_key):
-        input_in = torch.matmul(A[:, :, :A.shape[1]], self.linear_edge_in(hidden)) + self.b_iah
-        input_out = torch.matmul(A[:, :, A.shape[1]: 2 * A.shape[1]], self.linear_edge_out(hidden)) + self.b_oah
-        inputs = torch.cat([input_in, input_out], 2)
-        
         if not cur_key.use_GRU():
-            inputs = self.linear_noGRU(inputs)
+            # inputs = torch.cat([inputs, hidden], 2)
+            inputs = self.linear_noGRU(hidden)
+            inputs = F.relu(inputs)
             return inputs 
+        else:
+            input_in = torch.matmul(A[:, :, :A.shape[1]], self.linear_edge_in(hidden)) + self.b_iah
+            input_out = torch.matmul(A[:, :, A.shape[1]: 2 * A.shape[1]], self.linear_edge_out(hidden)) + self.b_oah
+            inputs = torch.cat([input_in, input_out], 2)
 
-
-        if self.gate_size_mult == 3:
-            gi = F.linear(inputs, self.w_ih, self.b_ih)
-            gh = F.linear(hidden, self.w_hh, self.b_hh)
-            i_r, i_i, i_n = gi.chunk(3,2)
-            h_r, h_i, h_n = gh.chunk(3,2)
-        elif self.gate_size_mult == 2:
-            gi = F.linear(inputs, self.w_ih, self.b_ih)
-            gh = F.linear(hidden, self.w_hh, self.b_hh)
-            if cur_key.use_reset_GRU_weights() and cur_key.use_update_GRU_weights():
-                i_r, i_i = gi.chunk(2,2)
-                h_r, h_i = gh.chunk(2,2)
-                ones = torch.ones(self.input_size, 1 * self.hidden_size)
+            if self.gate_size_mult == 3:
+                gi = F.linear(inputs, self.w_ih, self.b_ih)
+                gh = F.linear(hidden, self.w_hh, self.b_hh)
+                i_r, i_i, i_n = gi.chunk(3,2)
+                h_r, h_i, h_n = gh.chunk(3,2)
+            elif self.gate_size_mult == 2:
+                gi = F.linear(inputs, self.w_ih, self.b_ih)
+                gh = F.linear(hidden, self.w_hh, self.b_hh)
+                if cur_key.use_reset_GRU_weights() and cur_key.use_update_GRU_weights():
+                    i_r, i_i = gi.chunk(2,2)
+                    h_r, h_i = gh.chunk(2,2)
+                    ones = torch.ones(self.input_size, 1 * self.hidden_size)
+                    ones = trans_to_cuda(ones)
+                    i_n = torch.matmul(inputs, ones)
+                    h_n = hidden
+                elif cur_key.use_reset_GRU_weights() and cur_key.use_newgate_GRU_weights():
+                    i_r, i_n = gi.chunk(2,2)
+                    h_r, h_n = gh.chunk(2,2)
+                    ones = torch.ones(self.input_size, 1 * self.hidden_size)
+                    ones = trans_to_cuda(ones)
+                    i_i = torch.matmul(inputs, ones)
+                    h_i = hidden
+                elif cur_key.use_newgate_GRU_weights() and cur_key.use_update_GRU_weights():
+                    i_i, i_n = gi.chunk(2,2)
+                    h_i, h_n = gh.chunk(2,2)
+                    ones = torch.ones(self.input_size, 1 * self.hidden_size)
+                    ones = trans_to_cuda(ones)
+                    i_r = torch.matmul(inputs, ones)
+                    h_r = hidden
+            elif self.gate_size_mult == 1:
+                ones = torch.ones(self.input_size, self.gate_size)
                 ones = trans_to_cuda(ones)
-                i_n = torch.matmul(inputs, ones)
-                h_n = hidden
-            elif cur_key.use_reset_GRU_weights() and cur_key.use_newgate_GRU_weights():
-                i_r, i_n = gi.chunk(2,2)
-                h_r, h_n = gh.chunk(2,2)
-                ones = torch.ones(self.input_size, 1 * self.hidden_size)
+                gi = torch.matmul(inputs, ones)
+                
+                if cur_key.use_reset_GRU_weights():
+                    i_r = F.linear(inputs, self.w_ih, self.b_ih)
+                    h_r = F.linear(hidden, self.w_hh, self.b_hh)
+                    
+                    i_i = gi
+                    h_i = hidden
+                    
+                    i_n = gi
+                    h_n = hidden
+                elif cur_key.use_update_GRU_weights():
+                    i_r = gi
+                    h_r = hidden
+                    
+                    i_i = F.linear(inputs, self.w_ih, self.b_ih)
+                    h_i = F.linear(hidden, self.w_hh, self.b_hh)
+                    
+                    i_n = gi
+                    h_n = hidden
+                elif cur_key.use_newgate_GRU_weights():
+                    i_r = gi
+                    h_r = hidden
+                    
+                    i_i = gi
+                    h_i = hidden
+                    
+                    i_n = F.linear(inputs, self.w_ih, self.b_ih)
+                    h_n = F.linear(hidden, self.w_hh, self.b_hh)
+            else:
+                ones = torch.ones(self.input_size, self.hidden_size * 3)
                 ones = trans_to_cuda(ones)
-                i_i = torch.matmul(inputs, ones)
-                h_i = hidden
-            elif cur_key.use_newgate_GRU_weights() and cur_key.use_update_GRU_weights():
-                i_i, i_n = gi.chunk(2,2)
-                h_i, h_n = gh.chunk(2,2)
-                ones = torch.ones(self.input_size, 1 * self.hidden_size)
-                ones = trans_to_cuda(ones)
-                i_r = torch.matmul(inputs, ones)
-                h_r = hidden
-        elif self.gate_size_mult == 1:
-            ones = torch.ones(self.input_size, self.gate_size)
-            ones = trans_to_cuda(ones)
-            gi = torch.matmul(inputs, ones)
+                gi = torch.matmul(inputs, ones)
+                i_r, i_i, i_n = gi.chunk(3, 2)
+                h_r, h_i, h_n = hidden, hidden, hidden
             
-            if cur_key.use_reset_GRU_weights():
-                i_r = F.linear(inputs, self.w_ih, self.b_ih)
-                h_r = F.linear(hidden, self.w_hh, self.b_hh)
-                
-                i_i = gi
-                h_i = hidden
-                
-                i_n = gi
-                h_n = hidden
-            elif cur_key.use_update_GRU_weights():
-                i_r = gi
-                h_r = hidden
-                
-                i_i = F.linear(inputs, self.w_ih, self.b_ih)
-                h_i = F.linear(hidden, self.w_hh, self.b_hh)
-                
-                i_n = gi
-                h_n = hidden
-            elif cur_key.use_newgate_GRU_weights():
-                i_r = gi
-                h_r = hidden
-                
-                i_i = gi
-                h_i = hidden
-                
-                i_n = F.linear(inputs, self.w_ih, self.b_ih)
-                h_n = F.linear(hidden, self.w_hh, self.b_hh)
-        else:
-            ones = torch.ones(self.input_size, self.hidden_size * 3)
-            ones = trans_to_cuda(ones)
-            gi = torch.matmul(inputs, ones)
-            i_r, i_i, i_n = gi.chunk(3, 2)
-            h_r, h_i, h_n = hidden, hidden, hidden
-        
-        if cur_key.use_reset_sigmoid():
-            resetgate = torch.sigmoid(i_r + h_r)
-        else:
-            resetgate = i_r + h_r
-        
-        if cur_key.use_input_sigmoid():
-            inputgate = torch.sigmoid(i_i + h_i)
-        else:
-            inputgate = i_i + h_i
-        
-        if cur_key.use_newgate_tahn():
-            newgate = torch.tanh(i_n + resetgate * h_n)
-        else:
-            newgate = i_n + resetgate * h_n
-        
-        hy = newgate + inputgate * (hidden - newgate)
-        return hy
+            if cur_key.use_reset_sigmoid():
+                resetgate = torch.sigmoid(i_r + h_r)
+            else:
+                resetgate = i_r + h_r
+            
+            if cur_key.use_input_sigmoid():
+                inputgate = torch.sigmoid(i_i + h_i)
+            else:
+                inputgate = i_i + h_i
+            
+            if cur_key.use_newgate_tahn():
+                newgate = torch.tanh(i_n + resetgate * h_n)
+            else:
+                newgate = i_n + resetgate * h_n
+            
+            hy = newgate + inputgate * (hidden - newgate)
+            return hy
 
     def forward(self, A, hidden, cur_key):
         for i in range(self.step):
