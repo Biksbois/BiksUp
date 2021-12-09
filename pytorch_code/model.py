@@ -34,7 +34,9 @@ class GNN(Module):
         self.b_iah = Parameter(torch.Tensor(self.hidden_size))
         self.b_oah = Parameter(torch.Tensor(self.hidden_size))
         # remember to change self.hidden_size*3 to self.hidden_size*2
-        self.linear_noGRU = nn.Linear(self.hidden_size, self.hidden_size, bias=True)
+        self.linear_noGRU = nn.Linear(self.hidden_size, self.hidden_size*3, bias=True)
+        self.linear_1 = nn.Linear(self.hidden_size*3, self.hidden_size*2, bias=True)
+        self.linear_2 = nn.Linear(self.hidden_size*2, self.hidden_size, bias=True)
 
         self.linear_edge_in = nn.Linear(self.hidden_size, self.hidden_size, bias=True)
         self.linear_edge_out = nn.Linear(self.hidden_size, self.hidden_size, bias=True)
@@ -44,6 +46,10 @@ class GNN(Module):
         if not cur_key.use_GRU():
             # inputs = torch.cat([inputs, hidden], 2)
             inputs = self.linear_noGRU(hidden)
+            inputs = F.relu(inputs)
+            inputs = self.linear_1(inputs)
+            inputs = F.relu(inputs)
+            inputs = self.linear_2(inputs)
             inputs = F.relu(inputs)
             return inputs 
         else:
