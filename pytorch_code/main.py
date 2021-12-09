@@ -60,7 +60,7 @@ def big_o_run(dataset):
     log.debug(f"Run complete at {total_time} minutes")
 
 def get_n_sessions(n):
-    dataset_name = "sample"#"yoochoose1_4"
+    dataset_name = "yoochoose1_4"
     train_data = pickle.load(open('../datasets/' + dataset_name + '/train.txt', 'rb')) #TODO: HERE
     test_data = pickle.load(open('../datasets/' + dataset_name + '/test.txt', 'rb')) #TODO: HERE
     
@@ -69,15 +69,12 @@ def get_n_sessions(n):
     test_data = (test_data[0][:test_n], test_data[1][:test_n])
     
     log.debug(f"A new dataset has been generated for '{dataset_name}'\n  - Train data: {len(train_data[0])}\n  - Test data: {len(test_data[0])}")
-    # print(f"Train: {len(train_data[0])} - Test: {len(test_data[0])}")
     
     return train_data, test_data
 
 def big_o_main():
-    # 5917745
-    best, others = big_o.big_o(big_o_run, get_n_sessions, n_repeats=1, min_n=1, max_n=100, n_timings=1, n_measures=4) #TODO: HERE
+    best, others = big_o.big_o(big_o_run, get_n_sessions, n_repeats=1, min_n=100000, max_n=5917745, n_timings=1, n_measures=5) #TODO: HERE
     log.debug(best)
-    # log.debug(others)
 
 def main(opt):
     check_if_valid(opt)
