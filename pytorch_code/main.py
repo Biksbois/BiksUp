@@ -42,31 +42,40 @@ def ensure_valid_big_o_config(log, parsed_keys, opt):
         log.warning("--iterations parameter is obselete when running big_o. The input has been ignored.")
 
 def big_o_run(dataset):
+    start_time = time.time()
     train_data = dataset[0]
     test_data = dataset[1]
     
     train_data = Data(train_data, shuffle=True)
     test_data = Data(test_data, shuffle=False)
     
-    n_node = 310 #TODO: HERE
-    cur_key = metadataObj('0110')
+    n_node = 37484 #TODO: HERE
+    cur_key = metadataObj('0110') #TODO: Here
     model = trans_to_cuda(SessionGraph(opt, n_node, cur_key))
     _, _, _, _, _, _, _, _, _ = train_model(model, train_data, test_data, cur_key, opt)
+    end_time = time.time()
+    
+    total_time = (end_time - start_time) / 60
+    
+    log.debug(f"Run complete at {total_time} minutes")
 
 def get_n_sessions(n):
-    train_data = pickle.load(open('../datasets/' + "sample" + '/train.txt', 'rb')) #TODO: HERE
-    test_data = pickle.load(open('../datasets/' + "sample" + '/test.txt', 'rb')) #TODO: HERE
+    dataset_name = "sample"#"yoochoose1_4"
+    train_data = pickle.load(open('../datasets/' + dataset_name + '/train.txt', 'rb')) #TODO: HERE
+    test_data = pickle.load(open('../datasets/' + dataset_name + '/test.txt', 'rb')) #TODO: HERE
     
     train_data = (train_data[0][:n], train_data[1][:n])
     test_n = math.ceil(n*0.3)
     test_data = (test_data[0][:test_n], test_data[1][:test_n])
     
-    print(f"Train: {len(train_data[0])} - Test: {len(test_data[0])}")
+    log.debug(f"A new dataset has been generated for '{dataset_name}'\n  - Train data: {len(train_data[0])}\n  - Test data: {len(test_data[0])}")
+    # print(f"Train: {len(train_data[0])} - Test: {len(test_data[0])}")
     
     return train_data, test_data
 
 def big_o_main():
-    best, others = big_o.big_o(big_o_run, get_n_sessions, n_repeats=2, min_n=1, max_n=1200) #TODO: HERE
+    # 5917745
+    best, others = big_o.big_o(big_o_run, get_n_sessions, n_repeats=1, min_n=1, max_n=100, n_timings=1, n_measures=4) #TODO: HERE
     log.debug(best)
     # log.debug(others)
 
@@ -165,7 +174,7 @@ if __name__ == '__main__':
     if opt.big_o in TRUE_LIST:
         parsed_keys = get_metadata_list(opt.keys, opt.runall, opt.runlast)
         ensure_valid_big_o_config(log, parsed_keys, opt)
-        best, others = big_o_main()
+        big_o_main()
     else:
         main(opt)
     
