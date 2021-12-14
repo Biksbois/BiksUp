@@ -1,0 +1,21 @@
+The experiment just ran with the following parameters:
+  - Iterations: 1
+  - Keys: 
+    - 0110111111
+  - Dataset: sample
+
+The keys are as follows:
+  - Index: 000 | Name: nonhybrid                      | Desc: A combination between local and global embedding is utilized
+  - Index: 001 | Name: attention                      | Desc: Is attention utilized
+  - Index: 002 | Name: local                          | Desc: Only local embedding is utilized
+  - Index: 003 | Name: uniform_attention              | Desc: The attention is uniformly distributed between all items in a session
+  - Index: 004 | Name: reset_GRU_weights              | Desc: Is the GRU weights and bias is utilised when updating the reset gate
+  - Index: 005 | Name: update_GRU_weights             | Desc: Is the GRU weights and bias is utilised when updating the update gate
+  - Index: 006 | Name: newgate_GRU_weights            | Desc: Is the GRU weights and bias is utilised when updating the new gate
+  - Index: 007 | Name: reset_sigmoid                  | Desc: Is the sigmoid activation function is utilized when calculating the reset gate
+  - Index: 008 | Name: input_sigmoid                  | Desc: Is the sigmoid activation function is utilized when calculating the input gate
+  - Index: 009 | Name: newgate_tahn                   | Desc: Is the tahn activation function is utilized when calculating the new gate
+
+
+If you wish to run this experiment again, run the following string:
+  - python main.py --iterations 1 --keys  0110111111 --dataset sample
