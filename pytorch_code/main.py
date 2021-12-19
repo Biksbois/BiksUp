@@ -50,7 +50,7 @@ def big_o_run(dataset):
     test_data = Data(test_data, shuffle=False)
     
     n_node = 37484 #TODO: HERE
-    cur_key = metadataObj('0110') #TODO: Here
+    cur_key = metadataObj('01100110011') #TODO: Here
     model = trans_to_cuda(SessionGraph(opt, n_node, cur_key))
     _, _, _, _, _, _, _, _, _ = train_model(model, train_data, test_data, cur_key, opt)
     end_time = time.time()
@@ -73,7 +73,8 @@ def get_n_sessions(n):
     return train_data, test_data
 
 def big_o_main():
-    best, others = big_o.big_o(big_o_run, get_n_sessions, n_repeats=1, min_n=100000, max_n=5917745, n_timings=1, n_measures=5) #TODO: HERE
+    # best, others = big_o.big_o(big_o_run, get_n_sessions, n_repeats=1, min_n=3008870, max_n=5917740, n_timings=1, n_measures=3) #TODO: HERE
+    best, others = big_o.big_o(big_o_run, get_n_sessions, n_repeats=1, min_n=100000, max_n=5917740, n_timings=1, n_measures=5) #TODO: HERE
     log.debug(best)
 
 def main(opt):
